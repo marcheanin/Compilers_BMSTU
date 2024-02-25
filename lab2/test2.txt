@@ -1,0 +1,9 @@
+package main
+
+func main() {
+    var a, b int
+	var (
+		q, e int
+    )
+	println(a, b, c, d)
+}
