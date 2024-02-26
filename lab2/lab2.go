@@ -44,10 +44,6 @@ func divideVar(file *ast.File) {
 						}
 					}
 					if shift != 0 {
-						// blockStmt.List = append(blockStmt.List[:i+shift], blockStmt.List[i+1+shift:]...)
-						//before, after := blockStmt.List[:i], blockStmt.List[i:]
-						//blockStmt.List = append(before, newvars...)
-						//blockStmt.List = append(blockStmt.List, after...)
 						blockStmt.List = append(blockStmt.List[:i], append(newvars, blockStmt.List[i+1:]...)...)
 						i--
 					}
@@ -79,18 +75,6 @@ func divideVar(file *ast.File) {
 											},
 										},
 									})
-									//astFile.Decls = append(
-									//	[]ast.Decl{&ast.GenDecl{
-									//		Tok: token.VAR,
-									//		Specs: []ast.Spec{
-									//			&ast.ValueSpec{
-									//				Names:  idents,
-									//				Type:   valueSpec.Type,
-									//				Values: valueSpec.Values,
-									//			},
-									//		},
-									//	}},
-									//	astFile.Decls...)
 								}
 							}
 						}
