@@ -1,24 +1,26 @@
-package main
+package test
 
 import "fmt"
 
 var q, w string
+var z, y bool
 
 func sum(a, b int) {
 	var e, t int
-	fmt.Println(e + t)
+	fmt.Println(e + t + a + b)
 }
 
 func main() {
+    fmt.Println("da")
 	var gt int
 	var a, d, b int
 	var nm string
+
 	for i := 0; i < 10; i++ {
 		var l, m int
-		print(l, m)
+		fmt.Println(l, m)
 	}
 
-	var mem1, mem2 bool
-
-	fmt.Println(a, d, b, gt, nm, q, w)
+    sum(a, b)
+	fmt.Println(d, gt, nm, q, w, z, y)
 }
