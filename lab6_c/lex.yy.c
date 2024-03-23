@@ -1980,7 +1980,7 @@ int main(){
         }
     }
     while (tag != 0);
-    free(str);
+        free(str);
     free(table.names);
     return 0;
 }

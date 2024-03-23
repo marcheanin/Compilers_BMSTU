@@ -12,6 +12,10 @@ public class Token {
 
     @Override
     public String toString() {
+        if (tag == DomainTag.STR_LITERAL) {
+            value = value.substring(1, value.length() - 1);
+            value = value.replaceAll("::", ":");
+        }
         if (tag.name().contains("IDENT"))
             return "IDENT" + " " + coords.toString() + ": " + value;
         else

@@ -50,17 +50,6 @@ public class Position {
         return !isEOF() && Character.isWhitespace(getCode());
     }
 
-    public boolean isDecimalDigit() {
-        return !isEOF() && text.charAt(index) >= '0' && text.charAt(index) <= '9';
-    }
-
-    public boolean isLetter() {
-        return !isEOF() && Character.isLetter(getCode());
-    }
-
-    public boolean isLetterOrDigit() {
-        return !isEOF() && Character.isLetterOrDigit(getCode());
-    }
 
     public boolean isNewLine() {
         if (index == text.length()) {
