@@ -7,26 +7,6 @@ import java.util.ArrayList;
 public class Main {
 
     static Integer[][] table = {
-            /*      Wh,Di, |, +, g, s, e, t,Lt,X */
-            /*0*/  { 1, 7, 9, 8, 3, 5, 2, 2, 2,15}, // Start
-            /*1*/  { 1,-1,-1,-1,-1,-1,-1,-1,-1,15}, // Whitespace
-            /*2*/  {-1, 2,-1,-1, 2, 2, 2, 2, 2,15}, // Ident_1
-            /*3*/  {-1, 2,-1,-1, 2, 2, 4, 2, 2,15}, // Ident_2
-            /*4*/  {-1, 2,-1,-1, 2, 2, 2, 6, 2,15}, // Ident_3
-            /*5*/  {-1, 2,-1,-1, 2, 2, 4, 2, 2,15}, // Ident_4
-            /*6*/  {-1, 2,-1,-1, 2, 2, 2, 2, 2,15}, // Keyword
-            /*7*/  {-1, 7,-1,-1,-1,-1,-1,-1,-1,15}, // Num_Liter
-            /*8*/  {-1,-1,-1,-1,-1,-1,-1,-1,-1,15}, // Operation
-            /*9*/  {-1,-1, 8,10,-1,-1,-1,-1,-1,15}, // Operation Or Comment
-            /*10*/ {10,10,11,13,10,10,10,10,10,10}, // Comment
-            /*11*/ {10,10,10,12,10,10,10,10,10,10}, // ErrorComment
-            /*12*/ {-1,-1,-1,-1,-1,-1,-1,-1,-1,15}, // Error
-            /*13*/ {10,10,14,13,10,10,10,10,10,10}, // RightComment
-            /*14*/ {-1,-1,-1,-1,-1,-1,-1,-1,-1,15}, // Commentary
-            /*15*/ {-1,-1,-1,-1,-1,-1,-1,-1,-1,15}, // Unknown
-    };
-
-    static Integer[][] table1 = {
             /*     Wh,Di,Lt, +, -, n, e, q, :,Any, EndLine */
             /*0*/  {1, 6, 4, 7, 8, 2, 3, 4,10,12, 1}, // Start
             /*1*/  {1,-1,-1,-1,-1,-1,-1,-1,-1,12, 1}, // WhiteSpace
@@ -116,9 +96,9 @@ public class Main {
             while (state != -1) {
                 int symbols = numberColumn(cur);
                 prev_state=state;
-                state = (symbols == -1) ? -1: table1[state][symbols]; // переходим в следующее состояние
+                state = (symbols == -1) ? -1: table[state][symbols]; // переходим в следующее состояние
                 if(state!=-1){
-                    cur = cur.next();  // пока не пришли в запрещающее состояние, идём дальше
+                    cur = cur.next();  // пока можем идти, идём дальше
                 }
             }
             if (prev_state!=1 && prev_state!=0 && prev_state!= 15){

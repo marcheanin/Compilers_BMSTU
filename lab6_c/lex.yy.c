@@ -510,7 +510,7 @@ void print_frag(Fragment* f) {
 }
 
 union Token {
-    char *num_literal;
+    long num_literal;
     int ident;
     char *op;
 };
@@ -890,7 +890,7 @@ case 2:
 YY_RULE_SETUP
 #line 120 "main.l"
 {
-    yylval->num_literal = yytext;
+    yylval->num_literal = atol(yytext);
     return TAG_NUMERICAL_LITERAL;
 }
 	YY_BREAK
@@ -1966,13 +1966,13 @@ int main(){
         tag = yylex(&value,&coords);
         printf("%s ",tag_names[tag]);
         print_frag(&coords);
-        if (tag == 2) {
+        if (tag == TAG_IDENT) {
             printf(":\n%d\n", value.ident);
         }
-        else if (tag == 1){
-            printf(":\n%s\n", value.num_literal);
+        else if (tag == TAG_NUMERICAL_LITERAL){
+            printf(":\n%ld\n", value.num_literal);
         }
-        else if (tag == 3) {
+        else if (tag == TAG_OP) {
             printf(":\n%s\n", value.op);
         }
         else {
