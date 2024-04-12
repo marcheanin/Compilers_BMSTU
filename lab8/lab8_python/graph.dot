@@ -1,0 +1,41 @@
+digraph {
+2 [label = "PROGRAM"]
+2 -> 3
+2 -> 4
+3 [label = "RULE"]
+3 -> 5
+3 -> 6
+3 -> 7
+3 -> 8
+5 [label = "LEFT"]
+5 -> 9
+9 [label = "LEFT 2"]
+9 -> 10
+10 [label = "NONTERM"]
+6 [label = "ARROW"]
+7 [label = "RIGHT"]
+7 -> 11
+7 -> 12
+11 [label = "PART_RIGHT"]
+11 -> 13
+11 -> 14
+13 [label = "SYMB"]
+13 -> 15
+15 [label = "NONTERM"]
+14 [label = "PART_RIGHT2"]
+14 -> 16
+14 -> 17
+16 [label = "SYMB"]
+16 -> 18
+18 [label = "NONTERM"]
+17 [label = "PART_RIGHT2"]
+17 -> 19
+19 [label = "epsilon"]
+12 [label = "ALTERNATIVE"]
+12 -> 20
+20 [label = "epsilon"]
+8 [label = "KEY_WORD_END"]
+4 [label = "PROGRAM"]
+4 -> 21
+21 [label = "epsilon"]
+}
