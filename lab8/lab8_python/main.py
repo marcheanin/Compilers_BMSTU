@@ -157,7 +157,6 @@ class Predicter:
                 break
             if x.content in self.terminals:
                 if x.content == a.token_type:
-               #     if a.token_type == STR_TERM:
                     cur_x.replace_name(a.value.replace("\"", "\\\""))
                     self.magazine.pop()
                     a = next(self.tokens)
@@ -188,15 +187,11 @@ if __name__ == "__main__":
     lexer = Lexer(text + "$")
     try:
         iterator = lexer.tokenize()
-        # for token in iterator:
-        #     print(token)
         predicter = Predicter(iterator)
         root = predicter.top_down_parse()
         with open('graph.dot', 'w') as f:
             f.write('digraph {\n')
             root.print_graph(f)
             f.write('}')
-        # for r in result:
-        # print(r)
     except ValueError as v:
         print(v)

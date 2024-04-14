@@ -1,0 +1,34 @@
+PROGRAM ::=  RULE PROGRAM | eps
+RULE ::= LEFT ARROW RIGHT KEY_WORD_END
+
+LEFT ::= LEFT_1 | LEFT_2
+LEFT_1 ::= KEY_WORD_AXIOM NONTERM
+LEFT_2 ::= NONTERM
+
+RIGHT ::= PART_RIGHT ALTERNATIVE
+ALTERNATIVE ::= KEY_WORD_OR PART_RIGHT ALTERNATIVE | eps
+PART_RIGHT ::= SYMB PART_RIGHT2 | KEY_WORD_EPS
+PART_RIGHT2 ::= SYMB PART_RIGHT2 | eps
+SYMB ::= STR_TERM | NONTERM
+
+KEY_WORD_EPS ::= 'epsilon
+KEY_WORD_AXIOM ::= 'axiom
+KEY_WORD_OR ::= 'or
+KEY_WORD_END ::= 'end
+STR_TERM ::= "[^"\s]"
+NONTERM ::= [A-Z][A-Z0-9]*
+ARROW ::= '->'
+
+
+                ARROW	    KEY_WORD_END	    KEY_WORD_AXIOM	                NONTERM	                        KEY_WORD_OR	    KEY_WORD_EPS	        STR_TERM	            $
+Program                                         RULE PROGRAM                    RULE PROGRAM                                                                                    eps
+RULE                                            LEFT ARROW RIGHT KEY_WORD_END   LEFT ARROW RIGHT KEY_WORD_END
+LEFT                                            LEFT_1                          LEFT_2
+LEFT_1                                          KEY_WORD_AXIOM NONTERM
+LEFT_2                                                                          NONTERM
+RIGHT                                                                           PART_RIGHT ALTERNATIVE                          PART_RIGHT ALTERNATIVE  PART_RIGHT ALTERNATIVE
+ALTERNATIVE                 eps                                                                                 KEY_WORD_OR
+                                                                                                            PART_RIGHT ALTERNATIVE
+PART_RIGHT                                                                      SYMB PART_RIGHT2                                                        SYMB PART_RIGHT2
+PART_RIGHT2                 eps                                                 SYMB PART_RIGHT2                                                        SYMB PART_RIGHT2
+SYMB                                                                            NONTERM                                                                 STR_TERM
