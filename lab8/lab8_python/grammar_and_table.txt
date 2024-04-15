@@ -29,6 +29,6 @@ LEFT_2                                                                          
 RIGHT                                                                           PART_RIGHT ALTERNATIVE                          PART_RIGHT ALTERNATIVE  PART_RIGHT ALTERNATIVE
 ALTERNATIVE                 eps                                                                                 KEY_WORD_OR
                                                                                                             PART_RIGHT ALTERNATIVE
-PART_RIGHT                                                                      SYMB PART_RIGHT2                                                        SYMB PART_RIGHT2
-PART_RIGHT2                 eps                                                 SYMB PART_RIGHT2                                                        SYMB PART_RIGHT2
+PART_RIGHT                                                                      SYMB PART_RIGHT2                KEY_WORD_EPS                            SYMB PART_RIGHT2
+PART_RIGHT2                 eps                                                 SYMB PART_RIGHT2                 eps                                    SYMB PART_RIGHT2
 SYMB                                                                            NONTERM                                                                 STR_TERM

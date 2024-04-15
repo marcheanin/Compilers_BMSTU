@@ -23,14 +23,14 @@ END = "END"
 
 
 class Token:
-    def __init__(self, token_type, value, line, position):
+    def __init__(self, token_type, value="-1", line=-1, position=-1):
         self.token_type = token_type
         self.value = value
         self.line = line
         self.position = position
 
     def __str__(self):
-        return self.token_type + " " + self.value
+        return self.token_type + " " + str(self.value)
 
 
 class Lexer:
@@ -50,6 +50,7 @@ class Lexer:
             ('ARROW', r'->'),
             ('STR_TERM', r'\"[^\"\s]+\"'),
             ('NONTERM', r'[A-Z][A-Z0-9]*'),
+            ('COMMENT', r'#.*$')
         ]
 
     def tokenize(self):
@@ -61,7 +62,7 @@ class Lexer:
                 for rule in self.rules:
                     match = re.match(rule[1], line[self.position - 1:])
                     if match:
-                        if rule[0] != 'SPACE':
+                        if rule[0] != 'SPACE' and rule[0] != 'COMMENT':
                             value = match.group()
                             self.tokens.append(Token(rule[0], value, self.line, self.position))
                         self.position += match.end()
@@ -78,7 +79,7 @@ class Lexer:
 class TreeNode:
     num = 0
 
-    def __init__(self, content):
+    def __init__(self, content: Token):
         TreeNode.num += 1
         self.num = TreeNode.num
         self.content = content
@@ -86,8 +87,8 @@ class TreeNode:
 
     def replace_name(self, name):
         for child in self.children:
-            if child.content == STR_TERM:
-                child.content = name
+            if child.content.token_type == STR_TERM:
+                child.content.token_type = name
                 break
 
     def add_child(self, child):
@@ -97,7 +98,7 @@ class TreeNode:
         return str(self.content)
 
     def print_graph(self, f):
-        f.write(f'{self.num} [label = "{str(self.content)}"]\n')
+        f.write(f'{self.num} [label = "{str(self.content.token_type)}"]\n')
         for child in self.children:
             f.write(f'{self.num} -> {child.num}\n')
         for child in self.children:
@@ -145,37 +146,37 @@ class Predicter:
         }
 
     def top_down_parse(self):
-        self.magazine.append(TreeNode(END))
-        root = TreeNode(PROGRAM)
+        self.magazine.append(TreeNode(Token(END)))
+        root = TreeNode(Token(PROGRAM))
         self.magazine.append(root)
         a = next(self.tokens)
         result = []
         cur_x = None
         while True:
             x = self.magazine[-1]
-            if x.content == END:
+            if x.content.token_type == END:
                 break
-            if x.content in self.terminals:
-                if x.content == a.token_type:
+            if x.content.token_type in self.terminals:
+                if x.content.token_type == a.token_type:
                     cur_x.replace_name(a.value.replace("\"", "\\\""))
                     self.magazine.pop()
                     a = next(self.tokens)
                 else:
-                    raise ValueError(f"Problem with token {a.token_type}: {a.token_value}")
+                    raise ValueError(f"Problem with token {a.token_type}: {a.value}")
 
-            elif (x.content, a.token_type) in self.table:
+            elif (x.content.token_type, a.token_type) in self.table:
                 self.magazine.pop()
                 new_nodes = []
-                for i in range(len(self.table[(x.content, a.token_type)])):
-                    new_nodes.append(TreeNode(self.table[(x.content, a.token_type)][i]))
+                for i in range(len(self.table[(x.content.token_type, a.token_type)])):
+                    new_nodes.append(TreeNode(Token(self.table[(x.content.token_type, a.token_type)][i])))
                 if len(new_nodes) == 0:
-                    x.add_child(TreeNode("epsilon"))
+                    x.add_child(TreeNode(Token("epsilon")))
                 for y in new_nodes:
                     cur_x = x
                     x.add_child(y)
                 for y in new_nodes[::-1]:
                     self.magazine.append(y)
-                result.append((x.content, self.table[(x.content, a.token_type)]))
+                result.append((x.content, self.table[(x.content.token_type, a.token_type)]))
             else:
                 raise ValueError(f"Problem with token {a.token_type}: {a.value}")
         return root
