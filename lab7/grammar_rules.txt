@@ -1,25 +1,25 @@
 PROGRAM -> FUNCTION_DECL* | .
 
 FUNC_DECL -> FUNC_DECL1 | FUNC_DECL2
-FUNC_DECL1 -> (TYPE | VOID) IDENT '<-' PARAMETERS '=' OPERATORS .
-FUNC_DECL1 -> (TYPE | VOID) IDENT '=' OPERATORS .
+FUNC_DECL1 -> (FULL_TYPE | VOID) IDENT '<-' PARAMETERS '=' OPERATORS .
+FUNC_DECL1 -> (FULL_TYPE | VOID) IDENT '=' OPERATORS .
 
 
-PARAMETERS -> 	PARAMETERS PARAMETER | .
-PARAMETER  -> 	TYPE IDENT .
+PARAMETERS -> 	PARAMETERS ',' PARAMETER | .
+PARAMETER  -> 	FULL_TYPE IDENT .
 
 OPERATORS -> 	OPERARTORS ';' OPERATOR | .
 OPERATOR  -> 	DECL_OPERATOR | 
 		ASSIGN_OPERATOR | 
 		FUNC_CALL_OPERATOR | 
 		CHOOSE_OPERATOR | 
-		WHILE_LOOP | 
+		PRED_LOOP | 
 		FOR_LOOP | 
 		POST_LOOP | 
 		END_FUNC_OPERATOR .
 
-DECL_OPERATOR -> TYPE VAR_DECL
-VAR_DECL -> IDENT | ASSIGN_OPERATOR
+DECL_OPERATOR -> FULL_TYPE IDENT ':=' EXPRESSION
+DECL_OPERATOR -> FULL_TYPE IDENT
 
 ASSIGN_OPERATOR -> IDENT ':=' EXPRESSION
 
@@ -29,23 +29,47 @@ CHOOSE_OPERATOR -> CHOOSE_OPERATOR1 | CHOOSE_OPERATOR2
 CHOOSE_OPERATOR1 -> EXPRESSION 'then' OPERATORS 'else' OPERATORS .
 CHOOSE_OPERATOR2 -> EXPRESSION 'then' OPERATORS .
 
-END_FUNC_OPERATOR -> 'return' EXPRESSION?
+END_FUNC_OPERATOR -> 'return' | 'return' EXPRESSION
 
 PRED_LOOP -> EXPRESSION 'loop' OPERATORS .
 POST_LOOP -> 'loop' OPERATORS 'while' EXPRESSION .
+FOR_LOOP -> EXPRESSION ~ EXPRESSION 'loop' IDENT OPERATORS .
 
 EXPRESSIONS -> EXPRESSIONS EXPRESSION | .
-EXPRESSION -> 	EXPRESSION EXPRESSION |
-		TYPE EXPRESSION	|
+EXPRESSION  -> 	EXPRESSION EXPRESSION |
 		'-' EXPRESSION |
 		'!' EXPRESSION |
 		EXPRESSION OP_SYMBOL EXPRESSION |
 		FUNC_CALL_OPERATOR |
-		IDENT | 
+		IDENT |
+		INTEGER_CONST |
+		CHAR_LITERAL .
+
 			
 
 OP_SYMBOL -> '-' | '!' | '^' | '*' | '/' | '%' | '+' | '-' | '==' | '!=' | '<' | '>' | '<=' | '>=' | '&' | '|' | '@'
 
-TYPE -> 
+FULL_TYPE -> TYPE[][] | TYPE[] | TYPE
+TYPE -> 'bool' | 'int' | 'char'
 IDENT -> {[a-zA-Z0-9_\p{L}\s]+}
 INTEGER_CONST -> ^(0|[1-9][0-9][A-Z])$([2-9]|[1-2][0-9]|3[0-6])$
+CHAR_LITERAL -> \$\"[^\"\n]+\"|\$\%[0-9A-Fa-f]{2}|\$(BEL|LF|CR|BS|VT|FF|\"\")
+STRING_CONST -> \$(?:\"|\%|[0-9A-Fa-f]{1,2}|\%(?:BEL|LF|CR|BS|VT|FF|\"\")\%)|(?:\$(?:\"|\%|[0-9A-Fa-f]{1,2}|\%(?:BEL|LF|CR|BS|VT|FF|\"\")\%)|[^\$])*
+
+
+Напиши лексические правила в виде регулярного выражения для строковых секций следующего вида:
+Символьные константы изображают символы UNICODE или ASCII. Символы записываются в кавычках и предваряются знаком доллара.
+При этом некоторые управляющие символы ASCII, символ Кавычка или символ Процент изображаются Escape-последовательностями. Например: $"Q" $"я"  $"%CR%" $"%"%".
+Кроме того, любой символ с кодом x может быть представлен в шестнадцатиричной системе счисления, например $"%CR%", $D - обозначают одно и тоже. Таблица соответсвия:
+7 %BEL% 10 %LF% 13 %CR%
+8 %BS% 11 %VT% 34 %"%
+9 %TAB% 12 %FF% 37 %%
+
+То есть, верными символьными константами также являются $7, $8, $9, $A и так далее все коды из таблицы выше в 16-ричной системе.
+
+Основная форма строковой секции - последовательность символов и Escape - последовательностей.
+
+Пример правильной строки:  "We say %"%Hello , World!%"%" $A
+
+
+

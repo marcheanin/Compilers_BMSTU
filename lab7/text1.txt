@@ -1,0 +1,2 @@
+int[] {SumVectors} <- int {B}, int {B} =
+    return {A} + {B} .

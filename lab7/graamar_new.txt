@@ -1,0 +1,70 @@
+Program -> FuncDecl
+            | Program FuncDecl .
+
+FuncDecl -> FullTypeOrVoid Ident "<-" Parameters "=" Operators "."
+            | FullTypeOrVoid Ident "=" Operators "." .
+
+FullTypeOrVoid -> FullType
+                  | KW_VOID .
+
+Parameters -> Parameter | Parameters "," Parameter .
+Parameter -> FullType VARNAME.
+
+Operators -> Operator | Operators ";" Operator .
+Operator -> DeclOperator
+            | AssignOperator
+            | FuncCallOperator
+            | ChooseOperator
+            | PredLoopOperator
+            | PostLoopOperator
+            | ForLoopOperator
+            | EndFuncOperator .
+
+DeclOperator -> FullType Decls .
+Decls -> Decl
+        | Decls "," Decl .
+Decl -> Ident
+        | Ident ":=" Expression .
+
+AssignOperator -> DataExpression ":=" Expression .
+FuncCallOperator -> Ident "<=" Expressions .
+ChooseOperator -> BoolExpression "then" Operators "else" Operators "."
+                  | BoolExpression "then" Operators "." .
+
+PredLoopOperator -> BoolExpression "loop" Operators "." .
+ForLoopOperator -> Expression "~" Expression "loop" Ident Operators "." .
+PostLoopOperator -> "loop" Operators "while" BoolExpression "." .
+
+EndFuncOperator -> "return" Expression
+                    | "return" .
+
+Expressions -> Expression
+                | Expressions "," Expression "." .
+
+Expression -> ArithmExpression
+               	| BoolExpression .
+
+BoolExpression -> ArithmExpression BoolOp ArithmExpression .
+
+ArithmExpression -> DataExpression
+		| "-" Term
+		| "!" Term
+		| ArithmExpression AddOp Term .
+
+DataExpression -> Term | Term Term .
+
+Term -> Factor
+	| Term MulOp Factor .
+Factor -> ident | INTEGER_CONST
+	| CHAR_CONST .
+
+MulOp -> "^" | "*" | "//" .
+AddOp -> "+" | "-" .
+
+BoolOp -> "==" | "!=" | "<" | ">" | "<=" | ">=" | "&" | "|" | "@" .
+
+
+Ident -> "{" VARNAME "}" .
+FullType -> TYPE
+            | TYPE "[]"
+            | TYPE "[][]" .

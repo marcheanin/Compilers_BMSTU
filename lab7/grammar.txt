@@ -1,0 +1,55 @@
+Program -> FuncDecl .
+Program -> .
+Program -> Program FuncDecl .
+
+FuncDecl -> FullType IDENT "<-" Parameters "=" Operators "." .
+FuncDecl -> KW_VOID IDENT "=" Operators "." .
+
+Parameters -> Parameter .
+Parameters -> .
+Parameters -> Parameters "," Parameter .
+
+Parameter -> FullType IDENT .
+
+Operators -> Operator .
+Operators -> .
+Operators -> Operators ";" Operator .
+
+Operator -> DeclOperator .
+Operator -> AssignOperator .
+Operator -> FuncCallOperator .
+Operator -> ChooseOperator .
+Operator -> PredLoop .
+Operator -> Forloop .
+Operator -> PostLoop .
+Operator -> EndFuncOperator .
+
+DeclOperator -> FullType IDENT ":=" Expression .
+DeclOperator -> FullType IDENT .
+
+AssignOperator -> IDENT ":=" Expression .
+FuncCallOperator -> IDENT "<-" Expressions .
+
+ChooseOperator -> Expression "then" Operators "else" Operators "." .
+ChooseOperator -> Expression "then" Operators "." .
+
+EndFuncOperator -> "return" .
+EndFuncOperator -> "return" Expression .
+
+PredLoop -> Expression "loop" Operators "." .
+PostLoop -> "loop" Operators "while" Expression "." .
+Forloop -> Expression "~" Expression "loop" IDENT Operators "." .
+
+Expressions -> Expression .
+Expressions -> Expressions Expression .
+
+Expression -> PredSymbol Expression .
+Expression -> Expression OpSymbol Expression .
+Expression -> Ident .
+Expression -> FuncCallOperator .
+Expression -> INTEGER_CONST .
+Expression -> CHAR_LITERAL .
+
+FullType -> TYPE "[][]" .
+FullType -> TYPE "[]" .
+FullType -> TYPE .
