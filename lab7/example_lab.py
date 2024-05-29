@@ -196,7 +196,7 @@ assert p.is_lalr_one()
 p.add_skipped_domain('\\s')
 p.add_skipped_domain('(\\(\\*|\\{).*?(\\*\\)|\\})')
 
-for filename in sys.argv[1:]:
+for filename in ["example_good.pas"]:
     try:
         with open(filename) as f:
             tree = p.parse(f.read())

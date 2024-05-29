@@ -1,7 +1,7 @@
 int[] {SumVectors}
-    <- int[] {A}, int[] {B}
-    = int {size} := {Length}<-{A};
-    int[] {C} := int {size};
+    <- int[] A, int[] B
+    = int {size} := {Length} + {A};
+    int[] {C} := {size};
     0 ~ {size}−1 loop {i}
         {C}{i} := {A}{i} + {B}{i} . ;
     return {C} .

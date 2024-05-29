@@ -12,6 +12,7 @@ class Type(enum.Enum):
     Bool = 'bool'
     Integer = 'int'
     Char = 'char'
+    Void = 'void'
 
 
 @dataclass
@@ -21,7 +22,7 @@ class FullType:
 
 @dataclass
 class Ident:
-    varname: Any
+    varname: str
 
 
 class Expression(abc.ABC):
@@ -126,14 +127,42 @@ class EndFuncOperator(Operator):
     expr: Expression or None
 
 
+@dataclass
+class Parameter:
+    type: FullType
+    name: str
+
+
+@dataclass
+class FuncDecl1:
+    type: FullType
+    ident: Ident
+    params: list[Parameter]
+    ops: list[Operator]
+
+
+@dataclass
+class FuncDecl2:
+    type: FullType
+    ident: Ident
+    ops: list[Operator]
+
+
+@dataclass
+class ArithmExpression(Expression):
+    expr: Expression
+    op: str
+    term: str
+
+
 # лексическая структура
 
-INTEGER_CONST = pe.Terminal('INTEGER', '[0-9]+', str, priority=7)
+INTEGER_CONST = pe.Terminal('INTEGER', '[0-9]+', int, priority=7)
 CHAR_LITERAL = pe.Terminal('CHAR_LITERAL', '$\"[^\"]+\"|$%[0-9A-Fa-f]{2}|$(BEL|LF|CR|BS|VT|FF|\"\")', str)
 STRING_CONST = pe.Terminal('STRING',
                            '$(\"([^\"]|%(\"[%\\]|[0-9A-Fa-f]{2}|BEL|BS|TAB|LF|VT|FF|CR))*\")|([0-7]|9|[A-Fa-f])',
                            str)
-VARNAME = pe.Terminal('IDENT', '[a-zA-Z0-9_]+', str)
+VARNAME = pe.Terminal('VARNAME', '[A-Za-z0-9_]+', str)
 
 
 # OP_SYMBOL = pe.Terminal('OP_SYMBOL', '[!^*\/%+~-]==|!=|<=|>=|&|\||@', str)
@@ -143,8 +172,8 @@ def make_keyword(image):
     return pe.Terminal(image, image, lambda name: None, priority=10)
 
 
-KW_INT, KW_CHAR, KW_BOOL, KW_VOID = \
-    map(make_keyword, ['int', 'char', 'bool', 'void'])
+KW_INT, KW_CHAR, KW_BOOL, KW_VOID, KW_TRUE, KW_FALSE = \
+    map(make_keyword, ['int', 'char', 'bool', 'void', 'true', 'false'])
 
 KW_IF, KW_THEN, KW_ELSE, KW_RETURN, KW_LOOP, KW_WHILE = \
     map(make_keyword, ['if', 'then', 'else', 'return', 'loop', 'while'])
@@ -170,20 +199,20 @@ for op in ('==', '!=', '<', '>', '<=', '>='):
 NProgram |= NFuncDecl, lambda st: [st]
 NProgram |= NProgram, NFuncDecl, lambda fncs, fn: fncs + [fn]
 
-NFuncDecl |= NFullType, NIdent, '<-', NParameters, '=', NOperators, '.'  # немного не совпадает с грамматикой
-NFuncDecl |= KW_VOID, NIdent, '<-', NParameters, '=', NOperators, '.'
-NFuncDecl |= NFullType, NIdent, '=', NOperators, '.'
-NFuncDecl |= KW_VOID, NIdent, '=', NOperators, '.'
+NFuncDecl |= NFullType, NIdent, '<-', NParameters, '=', NOperators, '.', FuncDecl1  # немного не совпадает с грамматикой
+NFuncDecl |= KW_VOID, NIdent, '<-', NParameters, '=', NOperators, '.', FuncDecl1
+NFuncDecl |= NFullType, NIdent, '=', NOperators, '.', FuncDecl2
+NFuncDecl |= KW_VOID, NIdent, '=', NOperators, '.', FuncDecl2
 
 NParameters |= NParameter, lambda param: [param]  # аналогично
 NParameters |= NParameters, ',', NParameter, lambda params, param: params + [param]
 
-NParameter |= NFullType, VARNAME
+NParameter |= NFullType, VARNAME, Parameter
 
 NOperators |= NOperator, lambda op: [op]
 NOperators |= NOperators, ';', NOperator, lambda ops, op: ops + [op]
 
-NOperator |= NFullType, NDecls
+NOperator |= NFullType, NDecls, DeclOperator
 
 NDecls |= NDecl, lambda decl: [decl]
 NDecls |= NDecls, ',', NDecl, lambda decls, decl: decls + [decl]
@@ -215,7 +244,7 @@ NBoolExpression |= NArithmExpression, NCmpOp, NArithmExpression  # CmpOp == Bool
 NArithmExpression |= NDataExpression
 NArithmExpression |= '-', NTerm, lambda t: UnOpExpr('-', t)
 NArithmExpression |= '!', NTerm, lambda t: UnOpExpr('!', t)
-NArithmExpression |= NArithmExpression, NAddOp, NTerm
+NArithmExpression |= NArithmExpression, NAddOp, NTerm, ArithmExpression
 
 NDataExpression |= NTerm
 NDataExpression |= NTerm, NTerm
@@ -227,6 +256,8 @@ NFactor |= NIdent
 NFactor |= INTEGER_CONST
 NFactor |= CHAR_LITERAL
 NFactor |= STRING_CONST
+
+NIdent |= '{', VARNAME, '}', Ident
 
 NAddOp |= '+', lambda: '+'
 NAddOp |= '-', lambda: '-'
@@ -242,6 +273,8 @@ NFullType |= NType
 NType |= KW_INT, lambda: Type.Integer
 NType |= KW_CHAR, lambda: Type.Char
 NType |= KW_BOOL, lambda: Type.Bool
+NType |= KW_TRUE
+NType |= KW_FALSE
 
 parser = pe.Parser(NProgram)
 assert parser.is_lalr_one()
