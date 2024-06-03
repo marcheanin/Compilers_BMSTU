@@ -27,7 +27,7 @@ Decl -> Ident
         | Ident ":=" Expression .
 
 AssignOperator -> DataExpression ":=" Expression .
-FuncCallOperator -> Ident "<=" Expressions .
+FuncCallOperator -> Ident "<-" Expression ExpressionTail .
 ChooseOperator -> BoolExpression "then" Operators "else" Operators "."
                   | BoolExpression "then" Operators "." .
 
@@ -38,8 +38,9 @@ PostLoopOperator -> "loop" Operators "while" BoolExpression "." .
 EndFuncOperator -> "return" Expression
                     | "return" .
 
-Expressions -> Expression
-                | Expressions "," Expression "." .
+ExpressionTail -> "," Expression ExpressionTail .
+ExpressionTail -> .
+
 
 Expression -> ArithmExpression
                	| BoolExpression .

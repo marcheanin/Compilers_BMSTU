@@ -2,6 +2,14 @@ int[] {SumVectors}
     <- int[] A, int[] B
     = int {size} := {Length} + {A};
     int[] {C} := {size};
-    0 ~ {size}−1 loop {i}
-        {C}{i} := {A}{i} + {B}{i} . ;
+    char[] {D} := "Hello world";
+    int {res_func} := 65 + 7 ;
+    0 ~ {size} loop {i}
+        {C}{i} := {A}{i} + {B} . ;
+    ## КОММЕНТАРИЙ ##
+    #(
+        многострочный комментарий
+    )#
+    {A}5 < 7 then return 7
+    else return 8 . ;
     return {C} .

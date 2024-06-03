@@ -16,6 +16,11 @@ class Type(enum.Enum):
 
 
 @dataclass
+class CharSequenceType:
+    value: str
+
+
+@dataclass
 class FullType:
     type: Type
 
@@ -30,13 +35,9 @@ class Expression(abc.ABC):
 
 
 @dataclass
-class BoolExpression(Expression):
-    pass
-
-
-@dataclass
 class DataExpression(Expression):
-    pass
+    term1: str
+    term2: str
 
 
 @dataclass
@@ -81,12 +82,6 @@ class Decl2(Decl):
 class DeclOperator(Operator):
     type: FullType
     decl: list[Decl]
-
-
-@dataclass
-class FuncCallOperator(Operator):
-    ident: Any
-    expr: list[Expression]
 
 
 @dataclass
@@ -155,12 +150,37 @@ class ArithmExpression(Expression):
     term: str
 
 
+@dataclass
+class BoolExpression(Expression):
+    expr1: ArithmExpression
+    op: str
+    expr2: Expression
+
+
+@dataclass
+class ConstExpr(Expression):
+    value: Any
+    type: Type
+
+
+# @dataclass
+# class ExpressionTail(Expression):
+#     expr: Expression
+#     exprs: list[Expression]
+
+
+@dataclass
+class FuncCallOperator(Expression):
+    ident: Ident
+    expr: Expression
+
+
 # лексическая структура
 
 INTEGER_CONST = pe.Terminal('INTEGER', '[0-9]+', int, priority=7)
-CHAR_LITERAL = pe.Terminal('CHAR_LITERAL', '$\"[^\"]+\"|$%[0-9A-Fa-f]{2}|$(BEL|LF|CR|BS|VT|FF|\"\")', str)
+CHAR_LITERAL = pe.Terminal('CHAR_LITERAL', '\$\"[^\"]\"|\$[0-9A-Fa-f]{2}|\$\"%(BEL|LF|CR|BS|VT|FF|\"\")%\"', str)
 STRING_CONST = pe.Terminal('STRING',
-                           '$(\"([^\"]|%(\"[%\\]|[0-9A-Fa-f]{2}|BEL|BS|TAB|LF|VT|FF|CR))*\")|([0-7]|9|[A-Fa-f])',
+                           '(\"([^\"]|%(\"[%\\]|[0-9A-Fa-f]{2}|BEL|BS|TAB|LF|VT|FF|CR))*\")|([0-7]|9|[A-Fa-f])',
                            str)
 VARNAME = pe.Terminal('VARNAME', '[A-Za-z0-9_]+', str)
 
@@ -199,7 +219,7 @@ for op in ('==', '!=', '<', '>', '<=', '>='):
 NProgram |= NFuncDecl, lambda st: [st]
 NProgram |= NProgram, NFuncDecl, lambda fncs, fn: fncs + [fn]
 
-NFuncDecl |= NFullType, NIdent, '<-', NParameters, '=', NOperators, '.', FuncDecl1  # немного не совпадает с грамматикой
+NFuncDecl |= NFullType, NIdent, '<-', NParameters, '=', NOperators, '.', FuncDecl1
 NFuncDecl |= KW_VOID, NIdent, '<-', NParameters, '=', NOperators, '.', FuncDecl1
 NFuncDecl |= NFullType, NIdent, '=', NOperators, '.', FuncDecl2
 NFuncDecl |= KW_VOID, NIdent, '=', NOperators, '.', FuncDecl2
@@ -221,7 +241,6 @@ NDecl |= NIdent, Decl1
 NDecl |= NIdent, ':=', NExpression, Decl2
 
 NOperator |= NDataExpression, ':=', NExpression, AssignOperator
-# NOperator |= IDENT, '<-', NExpressions, FuncCallOperator
 
 NOperator |= NBoolExpression, KW_THEN, NOperators, KW_ELSE, NOperators, '.', ChooseOperator1
 NOperator |= NBoolExpression, KW_THEN, NOperators, '.', ChooseOperator2
@@ -239,7 +258,12 @@ NExpressions |= NExpressions, ',', NExpression, lambda exprs, expr: exprs + [exp
 NExpression |= NArithmExpression
 NExpression |= NBoolExpression
 
-NBoolExpression |= NArithmExpression, NCmpOp, NArithmExpression  # CmpOp == BoolOp
+# NExpression |= NIdent, '<-', NExpression, FuncCallOperator
+
+# NExpressionTail |= ",", NExpression, NExpressionTail, ExpressionTail
+# NExpressionTail |= lambda: ExpressionTail(None, [])
+
+NBoolExpression |= NArithmExpression, NCmpOp, NArithmExpression, BoolExpression  # CmpOp == BoolOp
 
 NArithmExpression |= NDataExpression
 NArithmExpression |= '-', NTerm, lambda t: UnOpExpr('-', t)
@@ -247,7 +271,7 @@ NArithmExpression |= '!', NTerm, lambda t: UnOpExpr('!', t)
 NArithmExpression |= NArithmExpression, NAddOp, NTerm, ArithmExpression
 
 NDataExpression |= NTerm
-NDataExpression |= NTerm, NTerm
+NDataExpression |= NTerm, NTerm, DataExpression
 
 NTerm |= NFactor
 NTerm |= NTerm, NMulOp, NFactor, BinOpExpr
@@ -256,6 +280,8 @@ NFactor |= NIdent
 NFactor |= INTEGER_CONST
 NFactor |= CHAR_LITERAL
 NFactor |= STRING_CONST
+NFactor |= KW_TRUE
+NFactor |= KW_FALSE
 
 NIdent |= '{', VARNAME, '}', Ident
 
@@ -273,19 +299,18 @@ NFullType |= NType
 NType |= KW_INT, lambda: Type.Integer
 NType |= KW_CHAR, lambda: Type.Char
 NType |= KW_BOOL, lambda: Type.Bool
-NType |= KW_TRUE
-NType |= KW_FALSE
 
 parser = pe.Parser(NProgram)
 assert parser.is_lalr_one()
-parser.print_table()
+# parser.print_table()
 
 # пробельные символы
 parser.add_skipped_domain('\s')
 # комментарии вида ## и #( ... )#
-parser.add_skipped_domain('(##.*|#(\n[^)]*\n)#)')
+# parser.add_skipped_domain('(##.*|#\(\n[^)]*\n\)#)')
+parser.add_skipped_domain('##.*?##|#\([\s\S]*?\)#')
 
-for filename in ["text1.txt"]:
+for filename in ["text.txt"]:
     try:
         with open(filename) as f:
             tree = parser.parse(f.read())
