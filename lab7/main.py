@@ -111,8 +111,8 @@ class PostLoop(Operator):
 
 @dataclass
 class ForLoop(Operator):
-    expr1: Expression
-    expr2: Expression
+    exprFrom: Expression
+    exprTo: Expression
     ident: Any
     ops: list[Operator]
 
@@ -125,7 +125,7 @@ class EndFuncOperator(Operator):
 @dataclass
 class Parameter:
     type: FullType
-    name: str
+    name: Ident
 
 
 @dataclass
@@ -163,16 +163,10 @@ class ConstExpr(Expression):
     type: Type
 
 
-# @dataclass
-# class ExpressionTail(Expression):
-#     expr: Expression
-#     exprs: list[Expression]
-
-
 @dataclass
-class FuncCallOperator(Expression):
+class FuncCallExpression(Expression):
     ident: Ident
-    expr: Expression
+    expr: list[Expression]
 
 
 # лексическая структура
@@ -192,21 +186,22 @@ def make_keyword(image):
     return pe.Terminal(image, image, lambda name: None, priority=10)
 
 
-KW_INT, KW_CHAR, KW_BOOL, KW_VOID, KW_TRUE, KW_FALSE = \
-    map(make_keyword, ['int', 'char', 'bool', 'void', 'true', 'false'])
+KW_INT, KW_CHAR, KW_BOOL, KW_VOID, KW_TRUE, KW_FALSE, KW_NULL = \
+    map(make_keyword, ['int', 'char', 'bool', 'void', 'true', 'false', 'null'])
 
 KW_IF, KW_THEN, KW_ELSE, KW_RETURN, KW_LOOP, KW_WHILE = \
     map(make_keyword, ['if', 'then', 'else', 'return', 'loop', 'while'])
 
 (NProgram, NFuncDecl, NParameters, NParameter, NOperators, NOperator,
- NDeclOperator, NFullType, NType, NExpression, NExpressions, NBoolExpression, NDataExpression, NArithmExpression,
- NCmpOp, NMulOp, NAddOp,
- NIdent, NDecls, NDecl, NTerm, NFactor) = \
+ NDeclOperator, NFullType, NType, NExpression, NExpressions, NDataExpression, NArithmExpression, NArithmExpressions,
+ NAndExpression, NCmpExpression, NFuncCallExpression, NCmpOp, NMulOp, NAddOp, NOrOp,
+ NIdent, NDecls, NDecl, NTerm, NFactor, NPower, NBaseExpression) = \
     map(pe.NonTerminal,
         'Program FuncDecl Parameters Parameter Operators Operator '
-        'DeclOperator FullType Type Expression Expressions BoolExpression DataExpression ArithmExpression CmpOp MulOp '
-        'AddOp Ident '
-        'Decls Decl Term Factor'.split())
+        'DeclOperator FullType Type Expression Expressions '
+        'DataExpression ArithmExpression ArithmExpressions AndExpression CmpExpression FuncCallExpression'
+        ' CmpOp MulOp AddOp OrOp Ident '
+        'Decls Decl Term Factor Power BaseExpression'.split())
 
 
 def make_op_lambda(op):
@@ -227,7 +222,7 @@ NFuncDecl |= KW_VOID, NIdent, '=', NOperators, '.', FuncDecl2
 NParameters |= NParameter, lambda param: [param]  # аналогично
 NParameters |= NParameters, ',', NParameter, lambda params, param: params + [param]
 
-NParameter |= NFullType, VARNAME, Parameter
+NParameter |= NFullType, NIdent, Parameter
 
 NOperators |= NOperator, lambda op: [op]
 NOperators |= NOperators, ';', NOperator, lambda ops, op: ops + [op]
@@ -242,55 +237,68 @@ NDecl |= NIdent, ':=', NExpression, Decl2
 
 NOperator |= NDataExpression, ':=', NExpression, AssignOperator
 
-NOperator |= NBoolExpression, KW_THEN, NOperators, KW_ELSE, NOperators, '.', ChooseOperator1
-NOperator |= NBoolExpression, KW_THEN, NOperators, '.', ChooseOperator2
+NOperator |= NExpression, KW_THEN, NOperators, KW_ELSE, NOperators, '.', ChooseOperator1
+NOperator |= NExpression, KW_THEN, NOperators, '.', ChooseOperator2
+
+NOperator |= NIdent, "<-", NArithmExpressions, FuncCallExpression
 
 NOperator |= KW_RETURN, NExpression, EndFuncOperator
 NOperator |= KW_RETURN
 
-NOperator |= NBoolExpression, KW_LOOP, NOperators, '.', PredLoop
-NOperator |= KW_LOOP, NOperators, KW_WHILE, NBoolExpression, '.', PostLoop
+NOperator |= NExpression, KW_LOOP, NOperators, '.', PredLoop
+NOperator |= KW_LOOP, NOperators, KW_WHILE, NExpression, '.', PostLoop
 NOperator |= NExpression, '~', NExpression, KW_LOOP, NIdent, NOperators, '.', ForLoop
 
-NExpressions |= NExpression, lambda expr: [expr]
-NExpressions |= NExpressions, ',', NExpression, lambda exprs, expr: exprs + [expr]
+NExpression |= NAndExpression
+NExpression |= NAndExpression, NOrOp, NAndExpression, BinOpExpr
 
-NExpression |= NArithmExpression
-NExpression |= NBoolExpression
+NOrOp |= "|", lambda: "|"
+NOrOp |= "@", lambda: "@"
 
-# NExpression |= NIdent, '<-', NExpression, FuncCallOperator
+NMulOp |= "*", lambda: "*"
+NMulOp |= "/", lambda: "/"
+NMulOp |= "%", lambda: "%"
 
-# NExpressionTail |= ",", NExpression, NExpressionTail, ExpressionTail
-# NExpressionTail |= lambda: ExpressionTail(None, [])
+NAddOp |= "+", lambda: "+"
+NAddOp |= "-", lambda: "-"
 
-NBoolExpression |= NArithmExpression, NCmpOp, NArithmExpression, BoolExpression  # CmpOp == BoolOp
+NAndExpression |= NCmpExpression
+NAndExpression |= NCmpExpression, "&", NCmpExpression, BinOpExpr
 
-NArithmExpression |= NDataExpression
-NArithmExpression |= '-', NTerm, lambda t: UnOpExpr('-', t)
-NArithmExpression |= '!', NTerm, lambda t: UnOpExpr('!', t)
-NArithmExpression |= NArithmExpression, NAddOp, NTerm, ArithmExpression
+NCmpExpression |= NFuncCallExpression
+NCmpExpression |= NFuncCallExpression, NCmpOp, NFuncCallExpression, BinOpExpr
 
-NDataExpression |= NTerm
-NDataExpression |= NTerm, NTerm, DataExpression
+NFuncCallExpression |= NArithmExpression
+# NFuncCallExpression |= NIdent, "<-", NArithmExpressions, FuncCallExpression
+
+NArithmExpressions |= NArithmExpression, lambda expr: [expr]
+NArithmExpressions |= NArithmExpressions, ",", NArithmExpression, lambda exprs, expr: exprs + [expr]
+
+NArithmExpression |= NTerm
+NArithmExpression |= NArithmExpression, NAddOp, NTerm, BinOpExpr
 
 NTerm |= NFactor
 NTerm |= NTerm, NMulOp, NFactor, BinOpExpr
 
-NFactor |= NIdent
-NFactor |= INTEGER_CONST
-NFactor |= CHAR_LITERAL
-NFactor |= STRING_CONST
-NFactor |= KW_TRUE
-NFactor |= KW_FALSE
+NFactor |= NPower
+NFactor |= NPower, "^", NFactor, BinOpExpr
 
-NIdent |= '{', VARNAME, '}', Ident
+NPower |= NDataExpression
+NPower |= "!", NPower, lambda p: UnOpExpr("!", p)
+NPower |= "-", NPower, lambda p: UnOpExpr("-", p)
+NPower |= NFullType, NBaseExpression, lambda x, y: BinOpExpr(x, 'allocate', y)
 
-NAddOp |= '+', lambda: '+'
-NAddOp |= '-', lambda: '-'
+NDataExpression |= NBaseExpression
+NDataExpression |= NDataExpression, NBaseExpression, lambda x, y: BinOpExpr(x, 'at', y)
+NDataExpression |= STRING_CONST, CharSequenceType
 
-NMulOp |= '^', lambda: '^'
-NMulOp |= '*', lambda: '*'
-NMulOp |= '/', lambda: '/'
+NBaseExpression |= NIdent, Ident
+NBaseExpression |= KW_TRUE
+NBaseExpression |= KW_FALSE
+NBaseExpression |= KW_NULL
+NBaseExpression |= CHAR_LITERAL
+NBaseExpression |= INTEGER_CONST
+NBaseExpression |= "(", NExpression, ")"
 
 NFullType |= NType, '[][]'
 NFullType |= NType, '[]'
@@ -300,14 +308,16 @@ NType |= KW_INT, lambda: Type.Integer
 NType |= KW_CHAR, lambda: Type.Char
 NType |= KW_BOOL, lambda: Type.Bool
 
+NIdent |= "{", VARNAME, "}", Ident
+
 parser = pe.Parser(NProgram)
+
+parser.print_table()
 assert parser.is_lalr_one()
-# parser.print_table()
 
 # пробельные символы
 parser.add_skipped_domain('\s')
 # комментарии вида ## и #( ... )#
-# parser.add_skipped_domain('(##.*|#\(\n[^)]*\n\)#)')
 parser.add_skipped_domain('##.*?##|#\([\s\S]*?\)#')
 
 for filename in ["text.txt"]:
@@ -317,5 +327,3 @@ for filename in ["text.txt"]:
             pprint(tree)
     except pe.Error as e:
         print(f'Ошибка {e.pos}: {e.message}')
-    except Exception as e:
-        print(e)

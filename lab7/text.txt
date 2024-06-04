@@ -1,9 +1,10 @@
 int[] {SumVectors}
-    <- int[] A, int[] B
+    <- int[] {A}, int[] {B}
     = int {size} := {Length} + {A};
     int[] {C} := {size};
     char[] {D} := "Hello world";
-    int {res_func} := 65 + 7 ;
+    {FuncName} <- {A}, {B}, 5 / (10 * 3);
+    int {res_func} := (65 + 7) * {A} ;
     0 ~ {size} loop {i}
         {C}{i} := {A}{i} + {B} . ;
     ## КОММЕНТАРИЙ ##
