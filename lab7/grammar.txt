@@ -24,45 +24,61 @@ DeclOperator -> FullType Decls .
 Decls -> Decl
         | Decls "," Decl .
 Decl -> Ident
-        | Ident ":=" Expression .
+        | Ident ":=" ArithmExpression .
 
 AssignOperator -> DataExpression ":=" Expression .
-FuncCallOperator -> Ident "<-" Expressions.
-ChooseOperator -> BoolExpression "then" Operators "else" Operators "."
-                  | BoolExpression "then" Operators "." .
 
-PredLoopOperator -> BoolExpression "loop" Operators "." .
+ChooseOperator -> Expression "then" Operators "else" Operators "."
+                  | Expression "then" Operators "." .
+
+PredLoopOperator -> Expression "loop" Operators "." .
 ForLoopOperator -> Expression "~" Expression "loop" Ident Operators "." .
-PostLoopOperator -> "loop" Operators "while" BoolExpression "." .
+PostLoopOperator -> "loop" Operators "while" Expression "." .
 
 EndFuncOperator -> "return" Expression
                     | "return" .
 
-Expressions -> Expression |
-                Expressions "," Expression .
 
-
-Expression -> ArithmExpression
-               	| BoolExpression .
-
-BoolExpression -> ArithmExpression BoolOp ArithmExpression .
-
-ArithmExpression -> DataExpression
-		| "-" Term
-		| "!" Term
-		| ArithmExpression AddOp Term .
-
-DataExpression -> Term | Term Term .
-
-Term -> Factor
-	| Term MulOp Factor .
-Factor -> ident | INTEGER_CONST
-	| CHAR_CONST .
-
-MulOp -> "^" | "*" | "//" .
+OrOp -> "|" | "@" .
+CmpOp -> ">" | "<" | "<=" | ">=" | "==" | "!=" .
 AddOp -> "+" | "-" .
+MulOp -> "*" | "//" | "%" .
 
-BoolOp -> "==" | "!=" | "<" | ">" | "<=" | ">=" | "&" | "|" | "@" .
+
+Expression -> OrExpression .
+OrExpression -> AndExpression |
+                AndExpression OrOp AndExpression .
+
+AndExpression -> CmpExpression |
+                 CmpExpression "&" CmpExpression .
+
+CmpExpression -> FuncCallExpression |
+                 FuncCallExpression CmpOp FuncCallExpression .
+
+FuncCallExpression -> ArithmExpression |
+                        Ident "<-" NArithmExpressions .
+
+ArithmExpressions -> ArithmExpression |
+                      ArithmExpressions "," ArithmExpression .
+
+ArithmExpression -> Term |
+                    ArithmExpression AddOp Term .
+
+Term -> Factor |
+        Term MulOp Factor .
+
+Factor -> Power |
+          Power "^" Factor .
+
+Power -> "!" Power |
+          "-" Power |
+          TYPE BaseExpression |
+          DataExpression .
+
+DataExpression -> BaseExpression |
+                  DataExpression BaseExpression .
+
+BaseExpression -> STRING_CONST | CHAR_CONST | INTEGER_CONST | Ident | "(" Expression ")" .
 
 
 Ident -> "{" VARNAME "}" .
