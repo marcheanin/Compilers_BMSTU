@@ -203,14 +203,6 @@ KW_IF, KW_THEN, KW_ELSE, KW_RETURN, KW_LOOP, KW_WHILE = \
         ' CmpOp MulOp AddOp OrOp Ident '
         'Decls Decl Term Factor Power BaseExpression'.split())
 
-
-def make_op_lambda(op):
-    return lambda: op
-
-
-for op in ('==', '!=', '<', '>', '<=', '>='):
-    NCmpOp |= op, make_op_lambda(op)
-
 NProgram |= NFuncDecl, lambda st: [st]
 NProgram |= NProgram, NFuncDecl, lambda fncs, fn: fncs + [fn]
 
@@ -233,7 +225,7 @@ NDecls |= NDecl, lambda decl: [decl]
 NDecls |= NDecls, ',', NDecl, lambda decls, decl: decls + [decl]
 
 NDecl |= NIdent, Decl1
-NDecl |= NIdent, ':=', NExpression, Decl2
+NDecl |= NIdent, ':=', NArithmExpression, Decl2
 
 NOperator |= NDataExpression, ':=', NExpression, AssignOperator
 
@@ -252,6 +244,14 @@ NOperator |= NExpression, '~', NExpression, KW_LOOP, NIdent, NOperators, '.', Fo
 NExpression |= NAndExpression
 NExpression |= NAndExpression, NOrOp, NAndExpression, BinOpExpr
 
+def make_op_lambda(op):
+    return lambda: op
+
+
+for op in ('==', '!=', '<', '>', '<=', '>='):
+    NCmpOp |= op, make_op_lambda(op)
+
+
 NOrOp |= "|", lambda: "|"
 NOrOp |= "@", lambda: "@"
 
@@ -269,7 +269,7 @@ NCmpExpression |= NFuncCallExpression
 NCmpExpression |= NFuncCallExpression, NCmpOp, NFuncCallExpression, BinOpExpr
 
 NFuncCallExpression |= NArithmExpression
-# NFuncCallExpression |= NIdent, "<-", NArithmExpressions, FuncCallExpression
+NFuncCallExpression |= NIdent, "<-", NArithmExpressions, FuncCallExpression
 
 NArithmExpressions |= NArithmExpression, lambda expr: [expr]
 NArithmExpressions |= NArithmExpressions, ",", NArithmExpression, lambda exprs, expr: exprs + [expr]
