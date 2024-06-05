@@ -24,7 +24,7 @@ DeclOperator -> FullType Decls .
 Decls -> Decl
         | Decls "," Decl .
 Decl -> Ident
-        | Ident ":=" Expression .
+        | Ident ":=" ArithmExpression .
 
 AssignOperator -> DataExpression ":=" Expression .
 

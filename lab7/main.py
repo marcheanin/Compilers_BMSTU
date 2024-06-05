@@ -244,13 +244,13 @@ NOperator |= NExpression, '~', NExpression, KW_LOOP, NIdent, NOperators, '.', Fo
 NExpression |= NAndExpression
 NExpression |= NAndExpression, NOrOp, NAndExpression, BinOpExpr
 
+
 def make_op_lambda(op):
     return lambda: op
 
 
 for op in ('==', '!=', '<', '>', '<=', '>='):
     NCmpOp |= op, make_op_lambda(op)
-
 
 NOrOp |= "|", lambda: "|"
 NOrOp |= "@", lambda: "@"
