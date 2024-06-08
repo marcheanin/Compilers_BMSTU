@@ -178,10 +178,6 @@ STRING_CONST = pe.Terminal('STRING',
                            str)
 VARNAME = pe.Terminal('VARNAME', '[A-Za-z0-9_]+', str)
 
-
-# OP_SYMBOL = pe.Terminal('OP_SYMBOL', '[!^*\/%+~-]==|!=|<=|>=|&|\||@', str)
-
-
 def make_keyword(image):
     return pe.Terminal(image, image, lambda name: None, priority=10)
 
