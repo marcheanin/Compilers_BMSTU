@@ -40,12 +40,7 @@ void yyerror(YYLTYPE *loc, yyscan_t scanner, long env[26], const char *message) 
 
 %%
 
-[\t ]+
-
-[\n]+ {
-printf("\n");
-return NEW_LINE;
-}
+[\t\s\r\n ]+
 
 int return INT
 char return CHAR
@@ -64,35 +59,60 @@ while return KW_WHILE
 
 == return EQUAL
 != return NOT_EQUAL
-< return LESS
-> return GREATER
-<= return LESS_EQUAL
+\< return LESS
+\> return GREATER
+\<= return LESS_EQUAL
 >= return GREATER_EQUAL
 
 \+ return PLUS
 \- return MINUS
-<- return LEFT_ARROW
-! return NOT
+\* return MUL
+\% return REM_OF_DIV
+@ return EXC_OR
+\| return OR
+; return SEMICOLON
+\<- return LEFT_ARROW
 \( return LEFT_PAREN
 \) return RIGHT_PAREN
+\[ return LEFT_PAREN2
+\] return RIGHT_PAREN2
+\{ return LEFT_PAREN3
+\} return RIGHT_PAREN3
+\^ return POW
+\/ return DIV
+! return NOT
+\& return AND
 , return COMMA
+~ return TILD
+\. return DOT
 
-
-:= ASSIGN
-
+:= return ASSIGN
+then return KW_THEN
 
 [0-9]+  {
     yylval->number = atoi(yytext);
-    return NUMBER;
+    return INTEGER;
 }
 
-[a-z]   {
-    yylval->variable = yytext[0];
-    return VARIABLE;
+\$\"[^\"]\"|\$[0-9A-Fa-f]{2}|\$\"%(BEL|LF|CR|BS|VT|FF|\"\")%\"   {
+    yylval->char = yytext;
+    return CHAR_LITERAL;
 }
 
-input   return INPUT;
-print   return PRINT;
+(\"([^\"]|%(\"[%\\]|[0-9A-Fa-f]{2}|BEL|BS|TAB|LF|VT|FF|CR))*\")|([0-7]|9|[A-Fa-f])  {
+    yylval->string = yytext;
+    return STRING_CONST;
+}
+
+[A-Za-z0-9_]+  {
+    yylval->varname = yytext;
+    return VARNAME;
+}
+
+##.*?##|#\([\s\S]*?\)#  {
+    yylval->comment = yytext;
+    return COMMENT;
+}
 
 %%
 

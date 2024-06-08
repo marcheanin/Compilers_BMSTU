@@ -1,2 +1,16 @@
-input a, b;
-print m = a - b ? (a, a, b), a + b - m, (a + b) / 2.
+int[] {SumVectors}
+    <- int[] {A}, int[] {B}
+    = int {size} := {Length} + {A};
+    int[] {C} := {size};
+    char[] {D} := "Hello world";
+    {FuncName} <- {A}, {B}, 5 / (10 * 3);
+    int {res_func} := (65 + 7) * {A} ;
+    0 ~ {size} loop {i}
+        {C}{i} := {A}{i} + {B} . ;
+    ## КОММЕНТАРИЙ ##
+    #(
+        многострочный комментарий
+    )#
+    {A}5 < 7 then return 7
+    else return 8 . ;
+    return {C} .

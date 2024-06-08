@@ -3,102 +3,211 @@
 #include "lexer.h"
 %}
 
+%define parse.error verbose
 %define api.pure
 %locations
 %lex-param {yyscan_t scanner}  /* параметр для yylex() */
 /* параметры для yyparse() */
 %parse-param {yyscan_t scanner}
 %parse-param {long env[26]}
+%parse-param {int tab}
+%parse-param {bool need_tab}
 
 %union {
-    char variable;
-    long number;
+    char* integer;
+    char* char_literal;
+    char* string_const;
+    char* varname;
+    char* comment;
 }
 
-%right ASSIGN
-%right IF
-%left '+' '-'
-%left MUL DIV
-%left UMINUS
-%token INPUT PRINT LEFT_PAREN RIGHT_PAREN COMMA SEMICOLON DOT
+%left EQUAL NOT_EQUAL LESS GREATER LESS_EQUAL GREATER_EQUAL
+%left PLUS MINUS MUL REM_OF_DIV EXC_OR OR AND DIV
+%right POW NOT UMINUS   /* 18 */
 
-%token <variable> VARIABLE
-%token <number> NUMBER
+%token INT CHAR BOOL VOID KW_TRUE KW_FALSE KW_NULL KW_IF KW_ELSE KW_RETURN KW_LOOP KW_WHILE KW_THEN
+%token SEMICOLON DOT LEFT_ARROW LEFT_PAREN RIGHT_PAREN LEFT_PAREN2 RIGHT_PAREN2 LEFT_PAREN3 RIGHT_PAREN3 COMMA TILD ASSIGN /* 23 */
 
-%type <number> expr
+%token <integer> INTEGER
+%token <char_literal> CHAR_LITERAL
+%token <string_const> STRING_CONST
+%token <varname> VARNAME
 
 %{
 int yylex(YYSTYPE *yylval_param, YYLTYPE *yylloc_param, yyscan_t scanner);
-void yyerror(YYLTYPE *loc, yyscan_t scanner, long env[26], const char *message);
+void yyerror(YYLTYPE *loc, yyscan_t scanner, long env[26], int tab, bool need_tab, const char *message);
+%}
+
+%{
+
+void print_tabs(int tab_col) {
+    for(int i = 0; i < tab_col; i++) {
+        printf("    ");
+    }
+}
+
 %}
 
 %%
 
-program:
-      statement SEMICOLON program
-    | statement DOT
-    ;
+Program:
+        FuncDecl
+        | Program FuncDecl
+        ;
+FuncDecl:
+        FullType Ident LEFT_ARROW {printf("<-");} Parameters EQUAL Operators DOT {printf(".");}
+        | VOID {printf("void");} Ident LEFT_ARROW {printf("<-");} Parameters EQUAL Operators DOT {printf(".");}
+        | FullType Ident LEFT_ARROW {printf("<-");} Operators DOT {printf(".");}
+        | VOID {printf("void");} Ident LEFT_ARROW {printf("<-");} Operators DOT {printf(".");}
+        ;
+Parameters:
+        Parameter
+        | Parameters COMMA {printf(",");} Parameter
+        ;
+Parameter:
+        FullType Ident
+        ;
+Operators:
+        Operator
+        | Operators SEMICOLON {printf(";");} Operator
+        ;
+Operator:
+        DeclOperator
+        | AssignOperator
+        | FuncCallOperator
+        | ChooseOperator
+        | PredLoopOperator
+        | PostLoopOperator
+        | ForLoopOperator
+        | EndFuncOperator
+        ;
+DeclOperator:
+        FullType Decls
+Decls:
+        Decl
+        | Decls COMMA {printf(",");} Decl
+        ;
+Decl:
+        Ident
+        | Ident ASSIGN {printf(":=");} ArithmExpression
+        ;
+AssignOperator:
+       DataExpression ASSIGN {printf(":=");} Expression
+       ;
+ChooseOperator:
+        Expression KW_THEN {printf("then");} Operators KW_ELSE {printf("else");} Operators DOT
+        | Expression KW_THEN {printf("then");} Operators DOT
+        ;
+FuncCallOperator:
+        Ident LEFT_ARROW {printf("<-");} ArithmExpressions
+        ;
+EndFuncOperator:
+        KW_RETURN {printf("return");} Expression
+        | KW_RETURN {printf("return");}
+        ;
+PredLoopOperator:
+        Expression KW_LOOP {printf("loop");} Operators DOT {printf(".");}
+        ;
+PostLoopOperator:
+        KW_LOOP Operators KW_WHILE {printf("while");} Expression DOT {printf(".");}
+        ;
+ForLoopOperator:
+        Expression TILD Expression KW_LOOP {printf("loop");} Ident Operators DOT {printf(".");}
+        ;
 
-statement:
-      PRINT print_list  { printf("\n"); }
-    | INPUT input_list
-    | expr
-    ;
-
-print_list:
-      print_expr
-    | print_list COMMA print_expr
-    ;
-
-print_expr:
-      expr
-      {
-          printf("%ld ", $expr);
-      }
-    ;
-
-input_list:
-      input_var
-    | input_list COMMA input_var
-    ;
-
-input_var:
-      VARIABLE
-      {
-          printf("%c = ", $VARIABLE);
-          fflush(stdout);
-          scanf("%ld", &env[$VARIABLE - 'a']);
-      }
-    ;
-
-expr:
-      VARIABLE ASSIGN expr[value]
-      {
-          $$ = env[$VARIABLE - 'a'] = $value;
-      }
-    | expr '+' expr { $$ = $1 + $3; }
-    | expr[L] '-' expr[R] { $$ = $L - $R; }
-    | expr[L] MUL expr[R] { $$ = $L * $R; }
-    | expr[L] DIV expr[R] { $$ = $L / $R; }
-    | LEFT_PAREN expr RIGHT_PAREN { $$ = $2; }
-    | expr[COND] IF LEFT_PAREN expr[NEG] COMMA expr[ZERO] COMMA expr[POS] RIGHT_PAREN
-      {
-          /* e ? (neg, zero, pos) */
-          $$ = $COND < 0 ? $NEG : $COND > 0 ? $POS : $ZERO;
-      }
-    | '-' expr[value] %prec UMINUS
-      {
-          $$ = -$value;
-      }
-    | NUMBER
-    | VARIABLE { $$ = env[$VARIABLE - 'a']; }
-    ;
-
+Expression:
+        AndExpression
+        | AndExpression OrOp AndExpression
+        ;
+OrOp:
+        OR { printf("|"); }
+        | EXC_OR { printf("@"); }
+        ;
+MulOp:
+        MUL { printf("*"); }
+        | DIV { printf("/"); }
+        | REM_OF_DIV { printf("\%"); }
+        ;
+AddOp:
+        PLUS { printf("+"); }
+        | MINUS { printf("-"); }
+        ;
+CmpOp:
+        EQUAL {printf("==");}
+        | NOT_EQUAL {printf("!=");}
+        | LESS {printf("<");}
+        | GREATER {printf(">");}
+        | LESS_EQUAL {printf("<=");}
+        | GREATER_EQUAL {printf(">=");}
+        ;
+AndExpression:
+        CmpExpression
+        | CmpExpression AND { printf("&"); } CmpExpression
+        ;
+CmpExpression:
+        FuncCallExpression
+        | FuncCallExpression CmpOp FuncCallExpression
+        ;
+FuncCallExpression:
+        ArithmExpression
+        | Ident LEFT_ARROW {printf("<-");} ArithmExpressions
+        ;
+ArithmExpressions:
+        ArithmExpression
+        | ArithmExpressions COMMA ArithmExpression
+        ;
+ArithmExpression:
+        Term
+        ArithmExpression AddOp Term
+        ;
+Term:
+        Factor
+        | Term MulOp Factor
+        ;
+Factor:
+        Power
+        | Power POW Factor
+        ;
+Power:
+        DataExpression
+        | NOT { printf("!"); } Power
+        | MINUS { printf("-"); } Power %prec UMINUS
+        | FullType BaseExpression
+        ;
+DataExpression:
+        BaseExpression
+        | DataExpression BaseExpression
+        | STRING_CONST {printf("%s", $STRING_CONST);}
+        ;
+BaseExpression:
+        Ident
+        | KW_TRUE {printf("true");}
+        | KW_FALSE {printf("false");}
+        | KW_NULL {printf("null");}
+        | CHAR_LITERAL {printf("%s", $CHAR_LITERAL);}
+        | INTEGER {printf("%s", $INTEGER);}
+        | LEFT_PAREN {printf("(");} Expression RIGHT_PAREN {printf(")");}
+        ;
+FullType:
+        Type LEFT_PAREN2 {printf("[");} RIGHT_PAREN2 {printf("]");}
+        | Type LEFT_PAREN2 {printf("[");} RIGHT_PAREN2 {printf("]");} LEFT_PAREN2 {printf("[");} RIGHT_PAREN2 {printf("]");}
+        | Type
+        ;
+Type:
+        INT {printf("int");}
+        | CHAR {printf("char");}
+        | BOOL {printf("bool");}
+        ;
+Ident:
+        LEFT_PAREN3 {printf("{");} VARNAME {printf("%s", $VARNAME);} RIGHT_PAREN3 {printf("}");}
+        ;
 %%
 
 int main(int argc, char *argv[]) {
     FILE *input = 0;
     long env[26] = { 0 };
+    int tab = 0;
+    bool need_tab = false;
     yyscan_t scanner;
     struct Extra extra;
 
@@ -111,7 +220,7 @@ int main(int argc, char *argv[]) {
     }
 
     init_scanner(input, &scanner, &extra);
-    yyparse(scanner, env);
+    yyparse(scanner, env, tab, need_tab);
     destroy_scanner(scanner);
 
     if (input != stdin) {
