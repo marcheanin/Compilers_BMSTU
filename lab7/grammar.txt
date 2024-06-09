@@ -8,7 +8,7 @@ FullTypeOrVoid -> FullType
                   | KW_VOID .
 
 Parameters -> Parameter | Parameters "," Parameter .
-Parameter -> FullType VARNAME.
+Parameter -> FullType Ident .
 
 Operators -> Operator | Operators ";" Operator .
 Operator -> DeclOperator

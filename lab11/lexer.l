@@ -42,69 +42,69 @@ void yyerror(YYLTYPE *loc, yyscan_t scanner, long env[26], const char *message) 
 
 [\t\s\r\n ]+
 
-int return INT
-char return CHAR
-bool return BOOL
-void return VOID
+int                          { return INT; }
+char                         { return CHAR; }
+bool                         { return BOOL; }
+void                         { return VOID; }
 
-true return KW_TRUE
-false return KW_FALSE
-null return KW_NULL
+true                         { return KW_TRUE; }
+false                        { return KW_FALSE; }
+null                         { return KW_NULL; }
 
-if return KW_IF
-else return KW_ELSE
-return return KW_RETURN
-loop return KW_LOOP
-while return KW_WHILE
+if                           { return KW_IF; }
+else                         { return KW_ELSE; }
+return                       { return KW_RETURN; }
+loop                         { return KW_LOOP; }
+while                        { return KW_WHILE; }
 
-== return EQUAL
-!= return NOT_EQUAL
-\< return LESS
-\> return GREATER
-\<= return LESS_EQUAL
->= return GREATER_EQUAL
+"=="                         { return EQUAL; }
+"!="                         { return NOT_EQUAL; }
+"<"                          { return LESS; }
+">"                          { return GREATER; }
+"<="                         { return LESS_EQUAL; }
+">="                         { return GREATER_EQUAL; }
 
-\+ return PLUS
-\- return MINUS
-\* return MUL
-\% return REM_OF_DIV
-@ return EXC_OR
-\| return OR
-; return SEMICOLON
-\<- return LEFT_ARROW
-\( return LEFT_PAREN
-\) return RIGHT_PAREN
-\[ return LEFT_PAREN2
-\] return RIGHT_PAREN2
-\{ return LEFT_PAREN3
-\} return RIGHT_PAREN3
-\^ return POW
-\/ return DIV
-! return NOT
-\& return AND
-, return COMMA
-~ return TILD
-\. return DOT
+"+"                          { return PLUS; }
+"-"                          { return MINUS; }
+"*"                          { return MUL; }
+"%"                          { return REM_OF_DIV; }
+"@"                          { return EXC_OR; }
+"|"                          { return OR; }
+";"                          { return SEMICOLON; }
+"<-"                         { return LEFT_ARROW; }
+"("                          { return LEFT_PAREN; }
+")"                          { return RIGHT_PAREN; }
+"["                          { return LEFT_PAREN2; }
+"]"                          { return RIGHT_PAREN2; }
+"{"                          { return LEFT_PAREN3; }
+"}"                          { return RIGHT_PAREN3; }
+"^"                          { return POW; }
+"/"                          { return DIV; }
+"!"                          { return NOT; }
+"&"                          { return AND; }
+","                          { return COMMA; }
+"~"                          { return TILD; }
+"."                          { return DOT; }
 
-:= return ASSIGN
-then return KW_THEN
+":="                         { return ASSIGN; }
+then                         { return KW_THEN; }
 
 [0-9]+  {
-    yylval->number = atoi(yytext);
+    yylval->integer = yytext;
     return INTEGER;
 }
 
 \$\"[^\"]\"|\$[0-9A-Fa-f]{2}|\$\"%(BEL|LF|CR|BS|VT|FF|\"\")%\"   {
-    yylval->char = yytext;
+    yylval->char_literal = yytext;
     return CHAR_LITERAL;
 }
 
 (\"([^\"]|%(\"[%\\]|[0-9A-Fa-f]{2}|BEL|BS|TAB|LF|VT|FF|CR))*\")|([0-7]|9|[A-Fa-f])  {
-    yylval->string = yytext;
+    yylval->string_const = yytext;
     return STRING_CONST;
 }
 
-[A-Za-z0-9_]+  {
+([A-Za-z0-9_]+)  {
     yylval->varname = yytext;
     return VARNAME;
 }

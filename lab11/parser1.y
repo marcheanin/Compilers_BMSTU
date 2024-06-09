@@ -23,10 +23,10 @@
 
 %left EQUAL NOT_EQUAL LESS GREATER LESS_EQUAL GREATER_EQUAL
 %left PLUS MINUS MUL REM_OF_DIV EXC_OR OR AND DIV
-%right POW NOT UMINUS   /* 18 */
+%right POW NOT UMINUS
 
 %token INT CHAR BOOL VOID KW_TRUE KW_FALSE KW_NULL KW_IF KW_ELSE KW_RETURN KW_LOOP KW_WHILE KW_THEN
-%token SEMICOLON DOT LEFT_ARROW LEFT_PAREN RIGHT_PAREN LEFT_PAREN2 RIGHT_PAREN2 LEFT_PAREN3 RIGHT_PAREN3 COMMA TILD ASSIGN /* 23 */
+%token SEMICOLON DOT LEFT_ARROW LEFT_PAREN RIGHT_PAREN LEFT_PAREN2 RIGHT_PAREN2 LEFT_PAREN3 RIGHT_PAREN3 COMMA TILD ASSIGN
 
 %token <integer> INTEGER
 %token <char_literal> CHAR_LITERAL
@@ -40,170 +40,199 @@ void yyerror(YYLTYPE *loc, yyscan_t scanner, long env[26], int tab, bool need_ta
 %}
 
 %{
-
 void print_tabs(int tab_col) {
     for(int i = 0; i < tab_col; i++) {
         printf("    ");
     }
 }
-
 %}
 
 %%
+
 Program:
         FuncDecl
         | Program FuncDecl
         ;
+
 FuncDecl:
         FullTypeOrVoid Ident LEFT_ARROW Parameters EQUAL Operators DOT
         | FullTypeOrVoid Ident EQUAL Operators DOT
         ;
+
 FullTypeOrVoid:
         FullType
-        | VOID {printf("void");}
+        | VOID
         ;
+
 Parameters:
         Parameter
-        | Parameters COMMA {printf(",");} Parameter
+        | Parameters COMMA Parameter
         ;
+
 Parameter:
         FullType Ident
         ;
+
 Operators:
         Operator
-        | Operators SEMICOLON {printf(";");} Operator
+        | Operators SEMICOLON Operator
         ;
+
 Operator:
         DeclOperator
         | AssignOperator
-        | FuncCallOperator
         | ChooseOperator
         | PredLoopOperator
         | PostLoopOperator
         | ForLoopOperator
         | EndFuncOperator
         ;
+
 DeclOperator:
         FullType Decls
         ;
+
 Decls:
         Decl
-        | Decls COMMA {printf(",");} Decl
+        | Decls COMMA Decl
         ;
+
 Decl:
         Ident
-        | Ident ASSIGN {printf(":=");} ArithmExpression
+        | Ident ASSIGN ArithmExpression
         ;
+
 AssignOperator:
-       DataExpression ASSIGN {printf(":=");} Expression
-       ;
+        DataExpression ASSIGN Expression
+        ;
+
 ChooseOperator:
-        Expression KW_THEN {printf("then");} Operators KW_ELSE {printf("else");} Operators DOT
-        | Expression KW_THEN {printf("then");} Operators DOT
+        Expression KW_THEN Operators KW_ELSE Operators DOT
+        | Expression KW_THEN Operators DOT
         ;
-FuncCallOperator:
-        Ident LEFT_ARROW {printf("<-");} ArithmExpressions
-        ;
-EndFuncOperator:
-        KW_RETURN {printf("return");} Expression
-        | KW_RETURN {printf("return");}
-        ;
+
 PredLoopOperator:
-        Expression KW_LOOP {printf("loop");} Operators DOT {printf(".");}
+        Expression KW_LOOP Operators DOT
         ;
-PostLoopOperator:
-        KW_LOOP Operators KW_WHILE {printf("while");} Expression DOT {printf(".");}
-        ;
+
 ForLoopOperator:
-        Expression TILD Expression KW_LOOP {printf("loop");} Ident Operators DOT {printf(".");}
+        Expression TILD Expression KW_LOOP Ident Operators DOT
+        ;
+
+PostLoopOperator:
+        KW_LOOP Operators KW_WHILE Expression DOT
+        ;
+
+EndFuncOperator:
+        KW_RETURN Expression
+        | KW_RETURN
+        ;
+
+OrOp:
+        OR
+        | EXC_OR
+        ;
+
+CmpOp:
+        GREATER
+        | LESS
+        | LESS_EQUAL
+        | GREATER_EQUAL
+        | EQUAL
+        | NOT_EQUAL
+        ;
+
+AddOp:
+        PLUS
+        | MINUS
+        ;
+
+MulOp:
+        MUL
+        | DIV
+        | REM_OF_DIV
         ;
 
 Expression:
+        OrExpression
+        ;
+
+OrExpression:
         AndExpression
         | AndExpression OrOp AndExpression
         ;
-OrOp:
-        OR { printf("|"); }
-        | EXC_OR { printf("@"); }
-        ;
-MulOp:
-        MUL { printf("*"); }
-        | DIV { printf("/"); }
-        | REM_OF_DIV { printf("%%"); }
-        ;
-AddOp:
-        PLUS { printf("+"); }
-        | MINUS { printf("-"); }
-        ;
-CmpOp:
-        EQUAL {printf("==");}
-        | NOT_EQUAL {printf("!=");}
-        | LESS {printf("<");}
-        | GREATER {printf(">");}
-        | LESS_EQUAL {printf("<=");}
-        | GREATER_EQUAL {printf(">=");}
-        ;
+
 AndExpression:
         CmpExpression
-        | CmpExpression AND { printf("&"); } CmpExpression
+        | CmpExpression AND CmpExpression
         ;
+
 CmpExpression:
         FuncCallExpression
         | FuncCallExpression CmpOp FuncCallExpression
         ;
+
 FuncCallExpression:
         ArithmExpression
-        | Ident LEFT_ARROW {printf("<-");} ArithmExpressions
+        | Ident LEFT_ARROW ArithmExpressions
         ;
+
 ArithmExpressions:
         ArithmExpression
         | ArithmExpressions COMMA ArithmExpression
         ;
+
 ArithmExpression:
         Term
         | ArithmExpression AddOp Term
         ;
+
 Term:
         Factor
         | Term MulOp Factor
         ;
+
 Factor:
         Power
         | Power POW Factor
         ;
+
 Power:
-        DataExpression
-        | NOT { printf("!"); } Power
-        | MINUS { printf("-"); } Power %prec UMINUS
+        NOT Power
+        | MINUS Power %prec UMINUS
         | FullType BaseExpression
+        | DataExpression
         ;
+
 DataExpression:
         BaseExpression
         | DataExpression BaseExpression
         ;
+
 BaseExpression:
-        Ident
-        | KW_TRUE {printf("true");}
-        | KW_FALSE {printf("false");}
-        | KW_NULL {printf("null");}
-        | CHAR_LITERAL {printf("%s", $CHAR_LITERAL);}
-        | INTEGER {printf("%s", $INTEGER);}
-        | LEFT_PAREN {printf("(");} Expression RIGHT_PAREN {printf(")");}
-        | STRING_CONST {printf("%s", $STRING_CONST);}
+        STRING_CONST
+        | CHAR_LITERAL
+        | INTEGER
+        | Ident
+        | LEFT_PAREN Expression RIGHT_PAREN
         ;
-FullType:
-        Type LEFT_PAREN2 {printf("[");} RIGHT_PAREN2 {printf("]");}
-        | Type LEFT_PAREN2 {printf("[");} RIGHT_PAREN2 {printf("]");} LEFT_PAREN2 {printf("[");} RIGHT_PAREN2 {printf("]");}
-        | Type
-        ;
-Type:
-        INT {printf("int");}
-        | CHAR {printf("char");}
-        | BOOL {printf("bool");}
-        ;
+
 Ident:
-        LEFT_PAREN3 {printf("{");} VARNAME {printf("%s", $VARNAME);} RIGHT_PAREN3 {printf("}");}
+        LEFT_PAREN3 VARNAME RIGHT_PAREN3
         ;
+
+FullType:
+        Type
+        | Type LEFT_PAREN2 RIGHT_PAREN2
+        | Type LEFT_PAREN2 RIGHT_PAREN2 LEFT_PAREN2 RIGHT_PAREN2
+        ;
+
+Type:
+        INT
+        | CHAR
+        | BOOL
+        ;
+
 %%
 
 int main(int argc, char *argv[]) {
