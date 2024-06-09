@@ -40,7 +40,10 @@ void yyerror(YYLTYPE *loc, yyscan_t scanner, long env[26], const char *message) 
 
 %%
 
-[\t\s\r\n ]+
+[\t ]+
+[\n]+ {
+printf("\n");
+}
 
 int                          { return INT; }
 char                         { return CHAR; }

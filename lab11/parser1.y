@@ -84,6 +84,7 @@ Operator:
         | ChooseOperator
         | PredLoopOperator
         | PostLoopOperator
+        | FuncCallOperator
         | ForLoopOperator
         | EndFuncOperator
         ;
@@ -104,6 +105,10 @@ Decl:
 
 AssignOperator:
         DataExpression ASSIGN Expression
+        ;
+
+FuncCallOperator:
+        Ident LEFT_ARROW ArithmExpressions
         ;
 
 ChooseOperator:
