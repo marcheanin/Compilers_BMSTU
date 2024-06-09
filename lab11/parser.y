@@ -55,23 +55,23 @@ Program:
         | Program FuncDecl
         ;
 FuncDecl:
-        FullTypeOrVoid Ident LEFT_ARROW Parameters EQUAL Operators DOT
-        | FullTypeOrVoid Ident EQUAL Operators DOT
+        FullTypeOrVoid Ident LEFT_ARROW {printf(" <- ");} Parameters {printf("\n"); tab++; print_tabs(tab);} EQUAL {printf("= ");} Operators DOT  {printf(".");}
+        | FullTypeOrVoid Ident EQUAL {printf("= "); need_tab = false; } Operators DOT {printf("."); tab = 0; need_tab = true;}
         ;
 FullTypeOrVoid:
         FullType
-        | VOID {printf("void");}
+        | VOID {printf("void ");}
         ;
 Parameters:
         Parameter
-        | Parameters COMMA Parameter
+        | Parameters COMMA {printf(", ");} Parameter
         ;
 Parameter:
         FullType Ident
         ;
 Operators:
-        Operator
-        | Operators SEMICOLON Operator
+        { if (need_tab) {print_tabs(tab);} need_tab = true;} Operator
+        | Operators SEMICOLON {printf(";"); printf("\n"); if (need_tab) {print_tabs(tab);} } Operator
         ;
 Operator:
         DeclOperator
@@ -88,64 +88,63 @@ DeclOperator:
         ;
 Decls:
         Decl
-        | Decls COMMA Decl
+        | Decls COMMA {printf(", ");} Decl
         ;
 Decl:
         Ident
-        | Ident ASSIGN  ArithmExpression
+        | Ident ASSIGN {printf(" := ");}  ArithmExpression
         ;
 AssignOperator:
-       DataExpression ASSIGN  Expression
+       DataExpression ASSIGN {printf(" := ");}  Expression
        ;
 ChooseOperator:
-        Expression KW_THEN Operators KW_ELSE Operators DOT
-        | Expression KW_THEN Operators DOT
+        Expression KW_THEN {printf(" then "); printf("\n"); tab++;} Operators {printf("\n"); print_tabs(tab-1);} KW_ELSE {printf("else\n");} Operators DOT {printf("."); tab--;}
+        | Expression KW_THEN {printf(" then "); printf("\n"); tab++;} Operators DOT {printf("."); tab--;}
         ;
 FuncCallOperator:
-        Ident LEFT_ARROW ArithmExpressions
+        Ident LEFT_ARROW {printf("<-");} ArithmExpressions
         ;
 EndFuncOperator:
-        KW_RETURN Expression
+        KW_RETURN {printf("return ");} Expression
         | KW_RETURN {printf("return");}
         ;
 PredLoopOperator:
-        Expression KW_LOOP Operators DOT {printf(".");}
+        Expression KW_LOOP {printf(" loop\n");} Operators DOT {printf(".");}
         ;
 PostLoopOperator:
-        KW_LOOP Operators KW_WHILE Expression DOT {printf(".");}
+        KW_LOOP {printf(" loop\n"); tab++;} Operators KW_WHILE {tab--; print_tabs(tab); printf("while ");} Expression DOT {printf(". ");}
         ;
 ForLoopOperator:
-        Expression TILD Expression KW_LOOP Ident Operators DOT {printf(".");}
+        Expression TILD {printf(" ~ ");} Expression KW_LOOP {printf(" loop "); } Ident {printf("\n"); tab++; need_tab = true;} Operators DOT {printf("."); tab--;}
         ;
-
 Expression:
         AndExpression
         | AndExpression OrOp AndExpression
         ;
 OrOp:
-        OR { printf("|"); }
-        | EXC_OR { printf("@"); }
+        OR { printf(" | "); }
+        | EXC_OR { printf(" @ "); }
         ;
 MulOp:
-        MUL { printf("*"); }
-        | DIV { printf("/"); }
-        | REM_OF_DIV { printf("%%"); }
+        MUL { printf(" * "); }
+        | DIV { printf(" / "); }
+        | REM_OF_DIV { printf(" %% "); }
         ;
 AddOp:
-        PLUS { printf("+"); }
-        | MINUS { printf("-"); }
+        PLUS { printf(" + "); }
+        | MINUS { printf(" - "); }
         ;
 CmpOp:
-        EQUAL_EQUAL {printf("==");}
-        | NOT_EQUAL {printf("!=");}
-        | LESS {printf("<");}
-        | GREATER {printf(">");}
-        | LESS_EQUAL {printf("<=");}
-        | GREATER_EQUAL {printf(">=");}
+        EQUAL_EQUAL {printf(" == ");}
+        | NOT_EQUAL {printf(" != ");}
+        | LESS {printf(" < ");}
+        | GREATER {printf(" > ");}
+        | LESS_EQUAL {printf(" <= ");}
+        | GREATER_EQUAL {printf(" >= ");}
         ;
 AndExpression:
         CmpExpression
-        | CmpExpression AND CmpExpression
+        | CmpExpression AND {printf(" & ");} CmpExpression
         ;
 CmpExpression:
         FuncCallExpression
@@ -153,11 +152,11 @@ CmpExpression:
         ;
 FuncCallExpression:
         ArithmExpression
-        | Ident LEFT_ARROW ArithmExpressions
+        | Ident LEFT_ARROW {printf("<- ");} ArithmExpressions
         ;
 ArithmExpressions:
         ArithmExpression
-        | ArithmExpressions COMMA ArithmExpression
+        | ArithmExpressions COMMA {printf(", ");} ArithmExpression
         ;
 ArithmExpression:
         Term
@@ -169,12 +168,12 @@ Term:
         ;
 Factor:
         Power
-        | Power POW Factor
+        | Power POW {printf(" ^ ");} Factor
         ;
 Power:
         DataExpression
-        | NOT Power
-        | MINUS Power %prec UMINUS
+        | NOT {printf("!");} Power
+        | MINUS {printf("-");} Power %prec UMINUS
         | FullType BaseExpression
         ;
 DataExpression:
@@ -188,13 +187,13 @@ BaseExpression:
         | KW_NULL {printf("null");}
         | CHAR_LITERAL {printf("%s", $CHAR_LITERAL);}
         | INTEGER {printf("%s", $INTEGER);}
-        | LEFT_PAREN Expression RIGHT_PAREN {printf(")");}
+        | LEFT_PAREN {printf("(");} Expression RIGHT_PAREN {printf(")");}
         | STRING_CONST {printf("%s", $STRING_CONST);}
         ;
 FullType:
-        Type LEFT_PAREN2 RIGHT_PAREN2 {printf("[]");}
-        | Type LEFT_PAREN2 RIGHT_PAREN2 LEFT_PAREN2 RIGHT_PAREN2 {printf("[][]");}
-        | Type
+        Type LEFT_PAREN2 RIGHT_PAREN2 {printf("[] ");}
+        | Type LEFT_PAREN2 RIGHT_PAREN2 LEFT_PAREN2 RIGHT_PAREN2 {printf("[][] ");}
+        | Type {printf(" ");}
         ;
 Type:
         INT {printf("int");}
@@ -202,7 +201,7 @@ Type:
         | BOOL {printf("bool");}
         ;
 Ident:
-        LEFT_PAREN3 VARNAME RIGHT_PAREN3 {printf("{%s}", $VARNAME);}
+        LEFT_PAREN3 {printf("{");} VARNAME {printf("%s", $VARNAME);}  RIGHT_PAREN3 {printf("}");}
         ;
 %%
 
