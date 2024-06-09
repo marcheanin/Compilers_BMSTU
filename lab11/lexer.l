@@ -9,7 +9,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "lexer.h"
-#include "y.tab.h"  /* файл генерируется Bison’ом */
+#include "parser.tab.h"  /* файл генерируется Bison’ом */
 
 #define YY_USER_ACTION \
   { \
@@ -32,7 +32,7 @@
     yylloc->last_column = extra->cur_column; \
   }
 
-void yyerror(YYLTYPE *loc, yyscan_t scanner, long env[26], const char *message) {
+void yyerror(YYLTYPE *loc, yyscan_t scanner, long env[26], int tab, bool need_tab, const char *message) {
     printf("Error (%d,%d): %s\n", loc->first_line, loc->first_column, message);
 }
 
@@ -40,10 +40,8 @@ void yyerror(YYLTYPE *loc, yyscan_t scanner, long env[26], const char *message) 
 
 %%
 
-[\t ]+
-[\n]+ {
-printf("\n");
-}
+[\t\r\n ]+
+
 
 int                          { return INT; }
 char                         { return CHAR; }
@@ -60,7 +58,8 @@ return                       { return KW_RETURN; }
 loop                         { return KW_LOOP; }
 while                        { return KW_WHILE; }
 
-"=="                         { return EQUAL; }
+"=="                         { return EQUAL_EQUAL; }
+"="                          { return EQUAL; }
 "!="                         { return NOT_EQUAL; }
 "<"                          { return LESS; }
 ">"                          { return GREATER; }
@@ -97,22 +96,22 @@ then                         { return KW_THEN; }
     return INTEGER;
 }
 
-\$\"[^\"]\"|\$[0-9A-Fa-f]{2}|\$\"%(BEL|LF|CR|BS|VT|FF|\"\")%\"   {
+(\$\"[^\"]\"|\$[0-9A-Fa-f]{2}|\$\"%(BEL|LF|CR|BS|VT|FF|\"\")%\")   {
     yylval->char_literal = yytext;
     return CHAR_LITERAL;
 }
 
-(\"([^\"]|%(\"[%\\]|[0-9A-Fa-f]{2}|BEL|BS|TAB|LF|VT|FF|CR))*\")|([0-7]|9|[A-Fa-f])  {
+(\"([^\"]|%(\"[%\\]|[0-9A-Fa-f]{2}|BEL|BS|TAB|LF|VT|FF|CR))*\")  {
     yylval->string_const = yytext;
     return STRING_CONST;
 }
 
-([A-Za-z0-9_]+)  {
+[A-Za-z0-9_]+ {
     yylval->varname = yytext;
     return VARNAME;
 }
 
-##.*?##|#\([\s\S]*?\)#  {
+(##.*?##|#\([\s\S]*?\)#)  {
     yylval->comment = yytext;
     return COMMENT;
 }
