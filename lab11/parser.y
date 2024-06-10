@@ -59,7 +59,7 @@ FuncDecl:
         | FullTypeOrVoid Ident EQUAL {printf("= "); need_tab = false; } Operators DOT {printf("."); tab = 0; need_tab = true;}
         ;
 CommentCheck:
-        | COMMENT {if (need_tab) { print_tabs(tab);} printf("%s", $COMMENT);} CommentCheck
+        | COMMENT {printf("%s\n", $COMMENT); if (need_tab) { print_tabs(tab);} } CommentCheck
         ;
 FullTypeOrVoid:
         FullType
@@ -73,8 +73,8 @@ Parameter:
         FullType Ident
         ;
 Operators:
-        { if (need_tab) {print_tabs(tab);} need_tab = true;} Operator
-        | Operators SEMICOLON {printf(";"); printf("\n"); if (need_tab) {print_tabs(tab);} } Operator
+        { if (need_tab) {print_tabs(tab);} need_tab = true;} Operator CommentCheck
+        | Operators SEMICOLON  {printf(";"); printf("\n"); if (need_tab) {print_tabs(tab);} } CommentCheck Operator
         ;
 Operator:
         DeclOperator

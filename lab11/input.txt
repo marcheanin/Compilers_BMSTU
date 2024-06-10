@@ -4,6 +4,7 @@ int[] {SumVectors}
     int[] {C} := {size};
     char[] {D} := "Hello world";
     {FuncName} <- {A}, {B}, 5 / (10 * 3);
+    ## КОММЕНТАРИЙ ##
     int {res_func} := (65 + 7) * {A} ;
     0 ~ {size} loop {i}
         loop
