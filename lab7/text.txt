@@ -6,11 +6,10 @@ int[] {SumVectors}
     {FuncName} <- {A}, {B}, 5 / (10 * 3);
     int {res_func} := (65 + 7) * {A} ;
     0 ~ {size} loop {i}
-        {C}{i} := {A}{i} + {B} . ;
-    ## КОММЕНТАРИЙ ##
-    #(
-        многострочный комментарий
-    )#
+        loop
+            {A}0 := {A}0 + 1
+        while {A}0 < 10 .;
+        {C}{i} := {A}{i} + {B} .;
     {A}5 < 7 then return 7
     else return 8 . ;
     return {C} .

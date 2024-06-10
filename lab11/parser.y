@@ -58,6 +58,9 @@ FuncDecl:
         FullTypeOrVoid Ident LEFT_ARROW {printf(" <- ");} Parameters {printf("\n"); tab++; print_tabs(tab);} EQUAL {printf("= ");} Operators DOT  {printf(".");}
         | FullTypeOrVoid Ident EQUAL {printf("= "); need_tab = false; } Operators DOT {printf("."); tab = 0; need_tab = true;}
         ;
+CommentCheck:
+        | COMMENT {if (need_tab) { print_tabs(tab);} printf("%s", $COMMENT);} CommentCheck
+        ;
 FullTypeOrVoid:
         FullType
         | VOID {printf("void ");}
@@ -109,10 +112,10 @@ EndFuncOperator:
         | KW_RETURN {printf("return");}
         ;
 PredLoopOperator:
-        Expression KW_LOOP {printf(" loop\n");} Operators DOT {printf(".");}
+        Expression KW_LOOP {printf(" loop\n"); tab++;} Operators DOT {printf("."); tab--;}
         ;
 PostLoopOperator:
-        KW_LOOP {printf(" loop\n"); tab++;} Operators KW_WHILE {tab--; print_tabs(tab); printf("while ");} Expression DOT {printf(". ");}
+        KW_LOOP {printf(" loop\n"); tab++;} Operators {printf("\n");} KW_WHILE {tab--; print_tabs(tab); printf("while ");} Expression DOT {printf(". ");}
         ;
 ForLoopOperator:
         Expression TILD {printf(" ~ ");} Expression KW_LOOP {printf(" loop "); } Ident {printf("\n"); tab++; need_tab = true;} Operators DOT {printf("."); tab--;}
