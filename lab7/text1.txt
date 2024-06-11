@@ -1,2 +1,0 @@
-int[] {SumInts} <- int B, int[] A =
-    return {A} + {B} .
