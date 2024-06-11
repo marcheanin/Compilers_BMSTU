@@ -13,6 +13,35 @@ class SemanticError(pe.Error):
     pass
 
 
+class FunctionMainExpected(SemanticError):
+    def __init__(self, pos):
+        self.pos = pos
+
+    @property
+    def message(self):
+        return f'Функция main ожидалась в программе'
+
+
+class RepeatedFunction(SemanticError):
+    def __init__(self, pos, func_name):
+        self.pos = pos
+        self.func_name = func_name
+
+    @property
+    def message(self):
+        return f'Повторная функция {self.func_name} на {self.pos}'
+
+
+class WrongFunctionType(SemanticError):
+    def __init__(self, pos, functionName):
+        self.pos = pos
+        self.functionName = functionName
+
+    @property
+    def message(self):
+        return f''
+
+
 class Type(enum.Enum):
     Bool = 'bool'
     Integer = 'int'
@@ -133,8 +162,11 @@ class Parameter:
     name: Ident
 
 
+class FuncDecl(abc.ABC):
+    pass
+
 @dataclass
-class FuncDecl1:
+class FuncDecl1(FuncDecl):
     type: FullType
     ident: Ident
     params: list[Parameter]
@@ -142,7 +174,7 @@ class FuncDecl1:
 
 
 @dataclass
-class FuncDecl2:
+class FuncDecl2(FuncDecl):
     type: FullType
     ident: Ident
     ops: list[Operator]
@@ -174,12 +206,26 @@ class FuncCallExpression(Expression):
     expr: list[Expression]
 
 
+@dataclass
+class Program:
+    funcDecls: list[FuncDecl1] or list[FuncDecl2]
+
+    def check(self):
+        main_func = None
+        func_names = {}
+        for funcDecl in self.funcDecls:
+            if funcDecl.ident == '{Main}':
+                main_func = funcDecl
+            if funcDecl.ident in func_names:
+                raise RepeatedFunction(funcDecl.ident.coord, funcDecl.ident)
+
+
 # лексическая структура
 
 INTEGER_CONST = pe.Terminal('INTEGER', '[0-9]+', int, priority=7)
 CHAR_LITERAL = pe.Terminal('CHAR_LITERAL', '\$\"[^\"]\"|\$[0-9A-Fa-f]{2}|\$\"%(BEL|LF|CR|BS|VT|FF|\"\")%\"', str)
 STRING_CONST = pe.Terminal('STRING',
-                           '(\"([^\"]|%(\"[%\\]|[0-9A-Fa-f]{2}|BEL|BS|TAB|LF|VT|FF|CR))*\")|([0-7]|9|[A-Fa-f])',
+                           '(\"([^\"]|%(\"[%\\]|[0-9A-Fa-f]{2}|BEL|BS|TAB|LF|VT|FF|CR))*\")',
                            str)
 VARNAME = pe.Terminal('VARNAME', '[A-Za-z0-9_]+', str)
 
@@ -205,8 +251,8 @@ KW_IF, KW_THEN, KW_ELSE, KW_RETURN, KW_LOOP, KW_WHILE = \
         ' CmpOp MulOp AddOp OrOp Ident '
         'Decls Decl Term Factor Power BaseExpression'.split())
 
-NProgram |= NFuncDecl, lambda st: [st]
-NProgram |= NProgram, NFuncDecl, lambda fncs, fn: fncs + [fn]
+NProgram |= NFuncDecl, Program
+NProgram |= NProgram, NFuncDecl, lambda fncs, fn: Program(fncs + [fn])
 
 NFuncDecl |= NFullType, NIdent, '<-', NParameters, '=', NOperators, '.', FuncDecl1
 NFuncDecl |= KW_VOID, NIdent, '<-', NParameters, '=', NOperators, '.', FuncDecl1
