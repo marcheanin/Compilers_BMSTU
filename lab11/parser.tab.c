@@ -226,11 +226,11 @@ typedef enum yysymbol_kind_t yysymbol_kind_t;
 
 
 /* Second part of user prologue.  */
-#line 37 "parser.y"
+#line 36 "parser.y"
 
 int yylex(YYSTYPE *yylval_param, YYLTYPE *yylloc_param, yyscan_t scanner);
-void yyerror(YYLTYPE *loc, yyscan_t scanner, long env[26], int tab, bool need_tab, const char *message);
-#line 42 "parser.y"
+void yyerror(YYLTYPE *loc, yyscan_t scanner, int tab, bool need_tab, const char *message);
+#line 41 "parser.y"
 
 
 void print_tabs(int tab_col) {
@@ -630,18 +630,18 @@ static const yytype_int8 yytranslate[] =
 /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_uint8 yyrline[] =
 {
-       0,    54,    54,    55,    58,    58,    58,    58,    59,    59,
-      61,    62,    62,    65,    66,    69,    70,    70,    73,    76,
-      76,    77,    77,    80,    81,    82,    83,    84,    85,    86,
-      87,    90,    93,    94,    94,    97,    98,    98,   101,   101,
-     104,   104,   104,   104,   105,   105,   108,   108,   111,   111,
-     112,   115,   115,   118,   118,   118,   118,   121,   121,   121,
-     121,   124,   125,   128,   129,   132,   133,   134,   137,   138,
-     141,   142,   143,   144,   145,   146,   149,   150,   150,   153,
-     154,   157,   158,   158,   161,   162,   162,   165,   166,   169,
-     170,   173,   174,   174,   177,   178,   178,   179,   179,   180,
-     183,   184,   187,   188,   189,   190,   191,   192,   193,   193,
-     194,   197,   198,   199,   202,   203,   204,   207,   207,   207
+       0,    53,    53,    54,    57,    57,    57,    57,    58,    58,
+      60,    61,    61,    64,    65,    68,    69,    69,    72,    75,
+      75,    76,    76,    79,    80,    81,    82,    83,    84,    85,
+      86,    89,    92,    93,    93,    96,    97,    97,   100,   100,
+     103,   103,   103,   103,   104,   104,   107,   107,   110,   110,
+     111,   114,   114,   117,   117,   117,   117,   120,   120,   120,
+     120,   123,   124,   127,   128,   131,   132,   133,   136,   137,
+     140,   141,   142,   143,   144,   145,   148,   149,   149,   152,
+     153,   156,   157,   157,   160,   161,   161,   164,   165,   168,
+     169,   172,   173,   173,   176,   177,   177,   178,   178,   179,
+     182,   183,   186,   187,   188,   189,   190,   191,   192,   192,
+     193,   196,   197,   198,   201,   202,   203,   206,   206,   206
 };
 #endif
 
@@ -902,7 +902,7 @@ enum { YYENOMEM = -2 };
       }                                                           \
     else                                                          \
       {                                                           \
-        yyerror (&yylloc, scanner, env, tab, need_tab, YY_("syntax error: cannot back up")); \
+        yyerror (&yylloc, scanner, tab, need_tab, YY_("syntax error: cannot back up")); \
         YYERROR;                                                  \
       }                                                           \
   while (0)
@@ -1018,7 +1018,7 @@ do {                                                                      \
     {                                                                     \
       YYFPRINTF (stderr, "%s ", Title);                                   \
       yy_symbol_print (stderr,                                            \
-                  Kind, Value, Location, scanner, env, tab, need_tab); \
+                  Kind, Value, Location, scanner, tab, need_tab); \
       YYFPRINTF (stderr, "\n");                                           \
     }                                                                     \
 } while (0)
@@ -1030,13 +1030,12 @@ do {                                                                      \
 
 static void
 yy_symbol_value_print (FILE *yyo,
-                       yysymbol_kind_t yykind, YYSTYPE const * const yyvaluep, YYLTYPE const * const yylocationp, yyscan_t scanner, long env[26], int tab, bool need_tab)
+                       yysymbol_kind_t yykind, YYSTYPE const * const yyvaluep, YYLTYPE const * const yylocationp, yyscan_t scanner, int tab, bool need_tab)
 {
   FILE *yyoutput = yyo;
   YY_USE (yyoutput);
   YY_USE (yylocationp);
   YY_USE (scanner);
-  YY_USE (env);
   YY_USE (tab);
   YY_USE (need_tab);
   if (!yyvaluep)
@@ -1053,14 +1052,14 @@ yy_symbol_value_print (FILE *yyo,
 
 static void
 yy_symbol_print (FILE *yyo,
-                 yysymbol_kind_t yykind, YYSTYPE const * const yyvaluep, YYLTYPE const * const yylocationp, yyscan_t scanner, long env[26], int tab, bool need_tab)
+                 yysymbol_kind_t yykind, YYSTYPE const * const yyvaluep, YYLTYPE const * const yylocationp, yyscan_t scanner, int tab, bool need_tab)
 {
   YYFPRINTF (yyo, "%s %s (",
              yykind < YYNTOKENS ? "token" : "nterm", yysymbol_name (yykind));
 
   YYLOCATION_PRINT (yyo, yylocationp);
   YYFPRINTF (yyo, ": ");
-  yy_symbol_value_print (yyo, yykind, yyvaluep, yylocationp, scanner, env, tab, need_tab);
+  yy_symbol_value_print (yyo, yykind, yyvaluep, yylocationp, scanner, tab, need_tab);
   YYFPRINTF (yyo, ")");
 }
 
@@ -1094,7 +1093,7 @@ do {                                                            \
 
 static void
 yy_reduce_print (yy_state_t *yyssp, YYSTYPE *yyvsp, YYLTYPE *yylsp,
-                 int yyrule, yyscan_t scanner, long env[26], int tab, bool need_tab)
+                 int yyrule, yyscan_t scanner, int tab, bool need_tab)
 {
   int yylno = yyrline[yyrule];
   int yynrhs = yyr2[yyrule];
@@ -1108,7 +1107,7 @@ yy_reduce_print (yy_state_t *yyssp, YYSTYPE *yyvsp, YYLTYPE *yylsp,
       yy_symbol_print (stderr,
                        YY_ACCESSING_SYMBOL (+yyssp[yyi + 1 - yynrhs]),
                        &yyvsp[(yyi + 1) - (yynrhs)],
-                       &(yylsp[(yyi + 1) - (yynrhs)]), scanner, env, tab, need_tab);
+                       &(yylsp[(yyi + 1) - (yynrhs)]), scanner, tab, need_tab);
       YYFPRINTF (stderr, "\n");
     }
 }
@@ -1116,7 +1115,7 @@ yy_reduce_print (yy_state_t *yyssp, YYSTYPE *yyvsp, YYLTYPE *yylsp,
 # define YY_REDUCE_PRINT(Rule)          \
 do {                                    \
   if (yydebug)                          \
-    yy_reduce_print (yyssp, yyvsp, yylsp, Rule, scanner, env, tab, need_tab); \
+    yy_reduce_print (yyssp, yyvsp, yylsp, Rule, scanner, tab, need_tab); \
 } while (0)
 
 /* Nonzero means print parse trace.  It is left uninitialized so that
@@ -1425,12 +1424,11 @@ yysyntax_error (YYPTRDIFF_T *yymsg_alloc, char **yymsg,
 
 static void
 yydestruct (const char *yymsg,
-            yysymbol_kind_t yykind, YYSTYPE *yyvaluep, YYLTYPE *yylocationp, yyscan_t scanner, long env[26], int tab, bool need_tab)
+            yysymbol_kind_t yykind, YYSTYPE *yyvaluep, YYLTYPE *yylocationp, yyscan_t scanner, int tab, bool need_tab)
 {
   YY_USE (yyvaluep);
   YY_USE (yylocationp);
   YY_USE (scanner);
-  YY_USE (env);
   YY_USE (tab);
   YY_USE (need_tab);
   if (!yymsg)
@@ -1452,7 +1450,7 @@ yydestruct (const char *yymsg,
 `----------*/
 
 int
-yyparse (yyscan_t scanner, long env[26], int tab, bool need_tab)
+yyparse (yyscan_t scanner, int tab, bool need_tab)
 {
 /* Lookahead token kind.  */
 int yychar;
@@ -1737,421 +1735,421 @@ yyreduce:
   switch (yyn)
     {
   case 4: /* $@1: %empty  */
-#line 58 "parser.y"
+#line 57 "parser.y"
                                         {printf(" <- ");}
-#line 1743 "parser.tab.c"
+#line 1741 "parser.tab.c"
     break;
 
   case 5: /* $@2: %empty  */
-#line 58 "parser.y"
+#line 57 "parser.y"
                                                                      {printf("\n"); tab++; print_tabs(tab);}
-#line 1749 "parser.tab.c"
+#line 1747 "parser.tab.c"
     break;
 
   case 6: /* $@3: %empty  */
-#line 58 "parser.y"
+#line 57 "parser.y"
                                                                                                                    {printf("= ");}
-#line 1755 "parser.tab.c"
+#line 1753 "parser.tab.c"
     break;
 
   case 7: /* FuncDecl: FullTypeOrVoid Ident LEFT_ARROW $@1 Parameters $@2 EQUAL $@3 Operators DOT  */
-#line 58 "parser.y"
+#line 57 "parser.y"
                                                                                                                                                   {printf(".");}
-#line 1761 "parser.tab.c"
+#line 1759 "parser.tab.c"
     break;
 
   case 8: /* $@4: %empty  */
-#line 59 "parser.y"
+#line 58 "parser.y"
                                      {printf("= "); need_tab = false; }
-#line 1767 "parser.tab.c"
+#line 1765 "parser.tab.c"
     break;
 
   case 9: /* FuncDecl: FullTypeOrVoid Ident EQUAL $@4 Operators DOT  */
-#line 59 "parser.y"
+#line 58 "parser.y"
                                                                                       {printf("."); tab = 0; need_tab = true;}
-#line 1773 "parser.tab.c"
+#line 1771 "parser.tab.c"
     break;
 
   case 11: /* $@5: %empty  */
-#line 62 "parser.y"
+#line 61 "parser.y"
                   {printf("%s\n", (yyvsp[0].comment)); if (need_tab) { print_tabs(tab);} }
-#line 1779 "parser.tab.c"
+#line 1777 "parser.tab.c"
     break;
 
   case 14: /* FullTypeOrVoid: VOID  */
-#line 66 "parser.y"
+#line 65 "parser.y"
                {printf("void ");}
-#line 1785 "parser.tab.c"
+#line 1783 "parser.tab.c"
     break;
 
   case 16: /* $@6: %empty  */
-#line 70 "parser.y"
+#line 69 "parser.y"
                            {printf(", ");}
-#line 1791 "parser.tab.c"
+#line 1789 "parser.tab.c"
     break;
 
   case 19: /* $@7: %empty  */
-#line 76 "parser.y"
+#line 75 "parser.y"
         { if (need_tab) {print_tabs(tab);} need_tab = true;}
-#line 1797 "parser.tab.c"
+#line 1795 "parser.tab.c"
     break;
 
   case 21: /* $@8: %empty  */
-#line 77 "parser.y"
+#line 76 "parser.y"
                                {printf(";"); printf("\n"); if (need_tab) {print_tabs(tab);} }
-#line 1803 "parser.tab.c"
+#line 1801 "parser.tab.c"
     break;
 
   case 33: /* $@9: %empty  */
-#line 94 "parser.y"
+#line 93 "parser.y"
                       {printf(", ");}
-#line 1809 "parser.tab.c"
+#line 1807 "parser.tab.c"
     break;
 
   case 36: /* $@10: %empty  */
-#line 98 "parser.y"
+#line 97 "parser.y"
                        {printf(" := ");}
-#line 1815 "parser.tab.c"
+#line 1813 "parser.tab.c"
     break;
 
   case 38: /* $@11: %empty  */
-#line 101 "parser.y"
+#line 100 "parser.y"
                              {printf(" := ");}
-#line 1821 "parser.tab.c"
+#line 1819 "parser.tab.c"
     break;
 
   case 40: /* $@12: %empty  */
-#line 104 "parser.y"
+#line 103 "parser.y"
                            {printf(" then "); printf("\n"); tab++;}
-#line 1827 "parser.tab.c"
+#line 1825 "parser.tab.c"
     break;
 
   case 41: /* $@13: %empty  */
-#line 104 "parser.y"
+#line 103 "parser.y"
                                                                               {printf("\n"); print_tabs(tab-1);}
-#line 1833 "parser.tab.c"
+#line 1831 "parser.tab.c"
     break;
 
   case 42: /* $@14: %empty  */
-#line 104 "parser.y"
+#line 103 "parser.y"
                                                                                                                          {printf("else\n");}
-#line 1839 "parser.tab.c"
+#line 1837 "parser.tab.c"
     break;
 
   case 43: /* ChooseOperator: Expression KW_THEN $@12 Operators $@13 KW_ELSE $@14 Operators DOT  */
-#line 104 "parser.y"
+#line 103 "parser.y"
                                                                                                                                                            {printf("."); tab--;}
-#line 1845 "parser.tab.c"
+#line 1843 "parser.tab.c"
     break;
 
   case 44: /* $@15: %empty  */
-#line 105 "parser.y"
+#line 104 "parser.y"
                              {printf(" then "); printf("\n"); tab++;}
-#line 1851 "parser.tab.c"
+#line 1849 "parser.tab.c"
     break;
 
   case 45: /* ChooseOperator: Expression KW_THEN $@15 Operators DOT  */
-#line 105 "parser.y"
+#line 104 "parser.y"
                                                                                     {printf("."); tab--;}
-#line 1857 "parser.tab.c"
+#line 1855 "parser.tab.c"
     break;
 
   case 46: /* $@16: %empty  */
-#line 108 "parser.y"
+#line 107 "parser.y"
                          {printf("<-");}
-#line 1863 "parser.tab.c"
+#line 1861 "parser.tab.c"
     break;
 
   case 48: /* $@17: %empty  */
-#line 111 "parser.y"
+#line 110 "parser.y"
                   {printf("return ");}
-#line 1869 "parser.tab.c"
+#line 1867 "parser.tab.c"
     break;
 
   case 50: /* EndFuncOperator: KW_RETURN  */
-#line 112 "parser.y"
+#line 111 "parser.y"
                     {printf("return");}
-#line 1875 "parser.tab.c"
+#line 1873 "parser.tab.c"
     break;
 
   case 51: /* $@18: %empty  */
-#line 115 "parser.y"
+#line 114 "parser.y"
                            {printf(" loop\n"); tab++;}
-#line 1881 "parser.tab.c"
+#line 1879 "parser.tab.c"
     break;
 
   case 52: /* PredLoopOperator: Expression KW_LOOP $@18 Operators DOT  */
-#line 115 "parser.y"
+#line 114 "parser.y"
                                                                      {printf("."); tab--;}
-#line 1887 "parser.tab.c"
+#line 1885 "parser.tab.c"
     break;
 
   case 53: /* $@19: %empty  */
-#line 118 "parser.y"
+#line 117 "parser.y"
                 {printf(" loop\n"); tab++;}
-#line 1893 "parser.tab.c"
+#line 1891 "parser.tab.c"
     break;
 
   case 54: /* $@20: %empty  */
-#line 118 "parser.y"
+#line 117 "parser.y"
                                                       {printf("\n");}
-#line 1899 "parser.tab.c"
+#line 1897 "parser.tab.c"
     break;
 
   case 55: /* $@21: %empty  */
-#line 118 "parser.y"
+#line 117 "parser.y"
                                                                                {tab--; print_tabs(tab); printf("while ");}
-#line 1905 "parser.tab.c"
+#line 1903 "parser.tab.c"
     break;
 
   case 56: /* PostLoopOperator: KW_LOOP $@19 Operators $@20 KW_WHILE $@21 Expression DOT  */
-#line 118 "parser.y"
+#line 117 "parser.y"
                                                                                                                                           {printf(". ");}
-#line 1911 "parser.tab.c"
+#line 1909 "parser.tab.c"
     break;
 
   case 57: /* $@22: %empty  */
-#line 121 "parser.y"
+#line 120 "parser.y"
                         {printf(" ~ ");}
-#line 1917 "parser.tab.c"
+#line 1915 "parser.tab.c"
     break;
 
   case 58: /* $@23: %empty  */
-#line 121 "parser.y"
+#line 120 "parser.y"
                                                             {printf(" loop "); }
-#line 1923 "parser.tab.c"
+#line 1921 "parser.tab.c"
     break;
 
   case 59: /* $@24: %empty  */
-#line 121 "parser.y"
+#line 120 "parser.y"
                                                                                        {printf("\n"); tab++; need_tab = true;}
-#line 1929 "parser.tab.c"
+#line 1927 "parser.tab.c"
     break;
 
   case 60: /* ForLoopOperator: Expression TILD $@22 Expression KW_LOOP $@23 Ident $@24 Operators DOT  */
-#line 121 "parser.y"
+#line 120 "parser.y"
                                                                                                                                              {printf("."); tab--;}
-#line 1935 "parser.tab.c"
+#line 1933 "parser.tab.c"
     break;
 
   case 63: /* OrOp: OR  */
-#line 128 "parser.y"
+#line 127 "parser.y"
            { printf(" | "); }
-#line 1941 "parser.tab.c"
+#line 1939 "parser.tab.c"
     break;
 
   case 64: /* OrOp: EXC_OR  */
-#line 129 "parser.y"
+#line 128 "parser.y"
                  { printf(" @ "); }
-#line 1947 "parser.tab.c"
+#line 1945 "parser.tab.c"
     break;
 
   case 65: /* MulOp: MUL  */
-#line 132 "parser.y"
+#line 131 "parser.y"
             { printf(" * "); }
-#line 1953 "parser.tab.c"
+#line 1951 "parser.tab.c"
     break;
 
   case 66: /* MulOp: DIV  */
-#line 133 "parser.y"
+#line 132 "parser.y"
               { printf(" / "); }
-#line 1959 "parser.tab.c"
+#line 1957 "parser.tab.c"
     break;
 
   case 67: /* MulOp: REM_OF_DIV  */
-#line 134 "parser.y"
+#line 133 "parser.y"
                      { printf(" %% "); }
-#line 1965 "parser.tab.c"
+#line 1963 "parser.tab.c"
     break;
 
   case 68: /* AddOp: PLUS  */
-#line 137 "parser.y"
+#line 136 "parser.y"
              { printf(" + "); }
-#line 1971 "parser.tab.c"
+#line 1969 "parser.tab.c"
     break;
 
   case 69: /* AddOp: MINUS  */
-#line 138 "parser.y"
+#line 137 "parser.y"
                 { printf(" - "); }
-#line 1977 "parser.tab.c"
+#line 1975 "parser.tab.c"
     break;
 
   case 70: /* CmpOp: EQUAL_EQUAL  */
-#line 141 "parser.y"
+#line 140 "parser.y"
                     {printf(" == ");}
-#line 1983 "parser.tab.c"
+#line 1981 "parser.tab.c"
     break;
 
   case 71: /* CmpOp: NOT_EQUAL  */
-#line 142 "parser.y"
+#line 141 "parser.y"
                     {printf(" != ");}
-#line 1989 "parser.tab.c"
+#line 1987 "parser.tab.c"
     break;
 
   case 72: /* CmpOp: LESS  */
-#line 143 "parser.y"
+#line 142 "parser.y"
                {printf(" < ");}
-#line 1995 "parser.tab.c"
+#line 1993 "parser.tab.c"
     break;
 
   case 73: /* CmpOp: GREATER  */
-#line 144 "parser.y"
+#line 143 "parser.y"
                   {printf(" > ");}
-#line 2001 "parser.tab.c"
+#line 1999 "parser.tab.c"
     break;
 
   case 74: /* CmpOp: LESS_EQUAL  */
-#line 145 "parser.y"
+#line 144 "parser.y"
                      {printf(" <= ");}
-#line 2007 "parser.tab.c"
+#line 2005 "parser.tab.c"
     break;
 
   case 75: /* CmpOp: GREATER_EQUAL  */
-#line 146 "parser.y"
+#line 145 "parser.y"
                         {printf(" >= ");}
-#line 2013 "parser.tab.c"
+#line 2011 "parser.tab.c"
     break;
 
   case 77: /* $@25: %empty  */
-#line 150 "parser.y"
+#line 149 "parser.y"
                             {printf(" & ");}
-#line 2019 "parser.tab.c"
+#line 2017 "parser.tab.c"
     break;
 
   case 82: /* $@26: %empty  */
-#line 158 "parser.y"
+#line 157 "parser.y"
                            {printf("<- ");}
-#line 2025 "parser.tab.c"
+#line 2023 "parser.tab.c"
     break;
 
   case 85: /* $@27: %empty  */
-#line 162 "parser.y"
+#line 161 "parser.y"
                                   {printf(", ");}
-#line 2031 "parser.tab.c"
+#line 2029 "parser.tab.c"
     break;
 
   case 92: /* $@28: %empty  */
-#line 174 "parser.y"
+#line 173 "parser.y"
                     {printf(" ^ ");}
-#line 2037 "parser.tab.c"
+#line 2035 "parser.tab.c"
     break;
 
   case 95: /* $@29: %empty  */
-#line 178 "parser.y"
+#line 177 "parser.y"
               {printf("!");}
-#line 2043 "parser.tab.c"
+#line 2041 "parser.tab.c"
     break;
 
   case 97: /* $@30: %empty  */
-#line 179 "parser.y"
+#line 178 "parser.y"
                 {printf("-");}
-#line 2049 "parser.tab.c"
+#line 2047 "parser.tab.c"
     break;
 
   case 103: /* BaseExpression: KW_TRUE  */
-#line 188 "parser.y"
+#line 187 "parser.y"
                   {printf("true");}
-#line 2055 "parser.tab.c"
+#line 2053 "parser.tab.c"
     break;
 
   case 104: /* BaseExpression: KW_FALSE  */
-#line 189 "parser.y"
+#line 188 "parser.y"
                    {printf("false");}
-#line 2061 "parser.tab.c"
+#line 2059 "parser.tab.c"
     break;
 
   case 105: /* BaseExpression: KW_NULL  */
-#line 190 "parser.y"
+#line 189 "parser.y"
                   {printf("null");}
-#line 2067 "parser.tab.c"
+#line 2065 "parser.tab.c"
     break;
 
   case 106: /* BaseExpression: CHAR_LITERAL  */
-#line 191 "parser.y"
+#line 190 "parser.y"
                        {printf("%s", (yyvsp[0].char_literal));}
-#line 2073 "parser.tab.c"
+#line 2071 "parser.tab.c"
     break;
 
   case 107: /* BaseExpression: INTEGER  */
-#line 192 "parser.y"
+#line 191 "parser.y"
                   {printf("%s", (yyvsp[0].integer));}
-#line 2079 "parser.tab.c"
+#line 2077 "parser.tab.c"
     break;
 
   case 108: /* $@31: %empty  */
-#line 193 "parser.y"
+#line 192 "parser.y"
                      {printf("(");}
-#line 2085 "parser.tab.c"
+#line 2083 "parser.tab.c"
     break;
 
   case 109: /* BaseExpression: LEFT_PAREN $@31 Expression RIGHT_PAREN  */
-#line 193 "parser.y"
+#line 192 "parser.y"
                                                            {printf(")");}
-#line 2091 "parser.tab.c"
+#line 2089 "parser.tab.c"
     break;
 
   case 110: /* BaseExpression: STRING_CONST  */
-#line 194 "parser.y"
+#line 193 "parser.y"
                        {printf("%s", (yyvsp[0].string_const));}
-#line 2097 "parser.tab.c"
+#line 2095 "parser.tab.c"
     break;
 
   case 111: /* FullType: Type LEFT_PAREN2 RIGHT_PAREN2  */
-#line 197 "parser.y"
+#line 196 "parser.y"
                                       {printf("[] ");}
-#line 2103 "parser.tab.c"
+#line 2101 "parser.tab.c"
     break;
 
   case 112: /* FullType: Type LEFT_PAREN2 RIGHT_PAREN2 LEFT_PAREN2 RIGHT_PAREN2  */
-#line 198 "parser.y"
+#line 197 "parser.y"
                                                                  {printf("[][] ");}
-#line 2109 "parser.tab.c"
+#line 2107 "parser.tab.c"
     break;
 
   case 113: /* FullType: Type  */
-#line 199 "parser.y"
+#line 198 "parser.y"
                {printf(" ");}
-#line 2115 "parser.tab.c"
+#line 2113 "parser.tab.c"
     break;
 
   case 114: /* Type: INT  */
-#line 202 "parser.y"
+#line 201 "parser.y"
             {printf("int");}
-#line 2121 "parser.tab.c"
+#line 2119 "parser.tab.c"
     break;
 
   case 115: /* Type: CHAR  */
-#line 203 "parser.y"
+#line 202 "parser.y"
                {printf("char");}
-#line 2127 "parser.tab.c"
+#line 2125 "parser.tab.c"
     break;
 
   case 116: /* Type: BOOL  */
-#line 204 "parser.y"
+#line 203 "parser.y"
                {printf("bool");}
-#line 2133 "parser.tab.c"
+#line 2131 "parser.tab.c"
     break;
 
   case 117: /* $@32: %empty  */
-#line 207 "parser.y"
+#line 206 "parser.y"
                     {printf("{");}
-#line 2139 "parser.tab.c"
+#line 2137 "parser.tab.c"
     break;
 
   case 118: /* $@33: %empty  */
-#line 207 "parser.y"
+#line 206 "parser.y"
                                            {printf("%s", (yyvsp[0].varname));}
-#line 2145 "parser.tab.c"
+#line 2143 "parser.tab.c"
     break;
 
   case 119: /* Ident: LEFT_PAREN3 $@32 VARNAME $@33 RIGHT_PAREN3  */
-#line 207 "parser.y"
+#line 206 "parser.y"
                                                                                    {printf("}");}
-#line 2151 "parser.tab.c"
+#line 2149 "parser.tab.c"
     break;
 
 
-#line 2155 "parser.tab.c"
+#line 2153 "parser.tab.c"
 
       default: break;
     }
@@ -2226,7 +2224,7 @@ yyerrlab:
                 yysyntax_error_status = YYENOMEM;
               }
           }
-        yyerror (&yylloc, scanner, env, tab, need_tab, yymsgp);
+        yyerror (&yylloc, scanner, tab, need_tab, yymsgp);
         if (yysyntax_error_status == YYENOMEM)
           YYNOMEM;
       }
@@ -2247,7 +2245,7 @@ yyerrlab:
       else
         {
           yydestruct ("Error: discarding",
-                      yytoken, &yylval, &yylloc, scanner, env, tab, need_tab);
+                      yytoken, &yylval, &yylloc, scanner, tab, need_tab);
           yychar = YYEMPTY;
         }
     }
@@ -2303,7 +2301,7 @@ yyerrlab1:
 
       yyerror_range[1] = *yylsp;
       yydestruct ("Error: popping",
-                  YY_ACCESSING_SYMBOL (yystate), yyvsp, yylsp, scanner, env, tab, need_tab);
+                  YY_ACCESSING_SYMBOL (yystate), yyvsp, yylsp, scanner, tab, need_tab);
       YYPOPSTACK (1);
       yystate = *yyssp;
       YY_STACK_PRINT (yyss, yyssp);
@@ -2344,7 +2342,7 @@ yyabortlab:
 | yyexhaustedlab -- YYNOMEM (memory exhaustion) comes here.  |
 `-----------------------------------------------------------*/
 yyexhaustedlab:
-  yyerror (&yylloc, scanner, env, tab, need_tab, YY_("memory exhausted"));
+  yyerror (&yylloc, scanner, tab, need_tab, YY_("memory exhausted"));
   yyresult = 2;
   goto yyreturnlab;
 
@@ -2359,7 +2357,7 @@ yyreturnlab:
          user semantic actions for why this is necessary.  */
       yytoken = YYTRANSLATE (yychar);
       yydestruct ("Cleanup: discarding lookahead",
-                  yytoken, &yylval, &yylloc, scanner, env, tab, need_tab);
+                  yytoken, &yylval, &yylloc, scanner, tab, need_tab);
     }
   /* Do not reclaim the symbols of the rule whose action triggered
      this YYABORT or YYACCEPT.  */
@@ -2368,7 +2366,7 @@ yyreturnlab:
   while (yyssp != yyss)
     {
       yydestruct ("Cleanup: popping",
-                  YY_ACCESSING_SYMBOL (+*yyssp), yyvsp, yylsp, scanner, env, tab, need_tab);
+                  YY_ACCESSING_SYMBOL (+*yyssp), yyvsp, yylsp, scanner, tab, need_tab);
       YYPOPSTACK (1);
     }
 #ifndef yyoverflow
@@ -2380,12 +2378,11 @@ yyreturnlab:
   return yyresult;
 }
 
-#line 209 "parser.y"
+#line 208 "parser.y"
 
 
 int main(int argc, char *argv[]) {
     FILE *input = 0;
-    long env[26] = { 0 };
     int tab = 0;
     bool need_tab = false;
     yyscan_t scanner;
@@ -2400,7 +2397,7 @@ int main(int argc, char *argv[]) {
     }
 
     init_scanner(input, &scanner, &extra);
-    yyparse(scanner, env, tab, need_tab);
+    yyparse(scanner, tab, need_tab);
     destroy_scanner(scanner);
 
     if (input != stdin) {

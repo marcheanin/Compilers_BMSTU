@@ -110,7 +110,7 @@ extern int yydebug;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 16 "parser.y"
+#line 15 "parser.y"
 
     char* integer;
     char* char_literal;
@@ -143,7 +143,7 @@ struct YYLTYPE
 
 
 
-int yyparse (yyscan_t scanner, long env[26], int tab, bool need_tab);
+int yyparse (yyscan_t scanner, int tab, bool need_tab);
 
 
 #endif /* !YY_YY_PARSER_TAB_H_INCLUDED  */

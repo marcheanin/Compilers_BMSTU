@@ -9,7 +9,6 @@
 %lex-param {yyscan_t scanner}  /* параметр для yylex() */
 /* параметры для yyparse() */
 %parse-param {yyscan_t scanner}
-%parse-param {long env[26]}
 %parse-param {int tab}
 %parse-param {bool need_tab}
 
@@ -36,7 +35,7 @@
 
 %{
 int yylex(YYSTYPE *yylval_param, YYLTYPE *yylloc_param, yyscan_t scanner);
-void yyerror(YYLTYPE *loc, yyscan_t scanner, long env[26], int tab, bool need_tab, const char *message);
+void yyerror(YYLTYPE *loc, yyscan_t scanner, int tab, bool need_tab, const char *message);
 %}
 
 %{
@@ -210,7 +209,6 @@ Ident:
 
 int main(int argc, char *argv[]) {
     FILE *input = 0;
-    long env[26] = { 0 };
     int tab = 0;
     bool need_tab = false;
     yyscan_t scanner;
@@ -225,7 +223,7 @@ int main(int argc, char *argv[]) {
     }
 
     init_scanner(input, &scanner, &extra);
-    yyparse(scanner, env, tab, need_tab);
+    yyparse(scanner, tab, need_tab);
     destroy_scanner(scanner);
 
     if (input != stdin) {

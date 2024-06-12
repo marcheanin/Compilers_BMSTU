@@ -1,5 +1,7 @@
 import abc
 import enum
+from abc import ABC
+
 import parser_edsl as pe
 import sys
 from dataclasses import dataclass
@@ -39,7 +41,16 @@ class WrongFunctionType(SemanticError):
 
     @property
     def message(self):
-        return f''
+        return f'Функция {self.functionName} имеет неверный тип, позиция: {self.pos}'
+
+
+class MainFunctionIncorrect(SemanticError):
+    def __init__(self, pos):
+        self.pos = pos
+
+    @property
+    def message(self):
+        return 'Функция Main некорректна: проверьте сигнатуру'
 
 
 class Type(enum.Enum):
@@ -57,6 +68,7 @@ class CharSequenceType:
 @dataclass
 class FullType:
     type: Type
+    array_dim: int
 
 
 @dataclass
@@ -65,7 +77,9 @@ class Ident:
 
 
 class Expression(abc.ABC):
-    pass
+    @abc.abstractmethod
+    def check(self, vars):
+        pass
 
 
 @dataclass
@@ -153,7 +167,7 @@ class ForLoop(Operator):
 
 @dataclass
 class EndFuncOperator(Operator):
-    expr: Expression or None
+    expr: Expression | None
 
 
 @dataclass
@@ -162,22 +176,18 @@ class Parameter:
     name: Ident
 
 
-class FuncDecl(abc.ABC):
-    pass
-
 @dataclass
-class FuncDecl1(FuncDecl):
+class FuncDecl:
     type: FullType
+    type_coord: pe.Position
     ident: Ident
-    params: list[Parameter]
+    ident_coord: pe.Position
+    params: list[Parameter] | None
     ops: list[Operator]
 
+    @pe.ExAction
+    def create(attrs, coords, res_coord):
 
-@dataclass
-class FuncDecl2(FuncDecl):
-    type: FullType
-    ident: Ident
-    ops: list[Operator]
 
 
 @dataclass
@@ -208,16 +218,30 @@ class FuncCallExpression(Expression):
 
 @dataclass
 class Program:
-    funcDecls: list[FuncDecl1] or list[FuncDecl2]
+    funcDecls: list[FuncDecl]
 
     def check(self):
         main_func = None
         func_names = {}
-        for funcDecl in self.funcDecls:
+        for funcDecl in self.funcDecls:  # проверка на повторяющиеся объявления функций
             if funcDecl.ident == '{Main}':
                 main_func = funcDecl
             if funcDecl.ident in func_names:
                 raise RepeatedFunction(funcDecl.ident.coord, funcDecl.ident)
+            func_names[funcDecl.ident] = funcDecl.type
+
+        if main_func:  # проверка правильно ли задана main функция
+            if main_func.type != Type.Integer:
+                raise MainFunctionIncorrect(main_func.pos)
+            else:
+                if len(main_func.params) == 1:
+                    if main_func.params[0].type != Type.Char or main_func.params[0].array_dim != 2:
+                        raise MainFunctionIncorrect(main_func.pos)
+                else:
+                    raise MainFunctionIncorrect(main_func.pos)
+
+        for funcDecl in self.funcDecls:
+            funcDecl.check()
 
 
 # лексическая структура
@@ -254,10 +278,10 @@ KW_IF, KW_THEN, KW_ELSE, KW_RETURN, KW_LOOP, KW_WHILE = \
 NProgram |= NFuncDecl, Program
 NProgram |= NProgram, NFuncDecl, lambda fncs, fn: Program(fncs + [fn])
 
-NFuncDecl |= NFullType, NIdent, '<-', NParameters, '=', NOperators, '.', FuncDecl1
-NFuncDecl |= KW_VOID, NIdent, '<-', NParameters, '=', NOperators, '.', FuncDecl1
-NFuncDecl |= NFullType, NIdent, '=', NOperators, '.', FuncDecl2
-NFuncDecl |= KW_VOID, NIdent, '=', NOperators, '.', FuncDecl2
+NFuncDecl |= NFullType, NIdent, '<-', NParameters, '=', NOperators, '.', FuncDecl
+NFuncDecl |= KW_VOID, NIdent, '<-', NParameters, '=', NOperators, '.', FuncDecl
+NFuncDecl |= NFullType, NIdent, '=', NOperators, '.', lambda type_, ident_, operators: FuncDecl(type_, ident_, None, operators)
+NFuncDecl |= KW_VOID, NIdent, '=', NOperators, '.', lambda type_, ident_, operators: FuncDecl(type_, ident_, None, operators)
 
 NParameters |= NParameter, lambda param: [param]  # аналогично
 NParameters |= NParameters, ',', NParameter, lambda params, param: params + [param]
@@ -283,7 +307,7 @@ NOperator |= NExpression, KW_THEN, NOperators, '.', ChooseOperator2
 NOperator |= NIdent, "<-", NArithmExpressions, FuncCallExpression
 
 NOperator |= KW_RETURN, NExpression, EndFuncOperator
-NOperator |= KW_RETURN
+NOperator |= KW_RETURN, lambda: EndFuncOperator(None)
 
 NOperator |= NExpression, KW_LOOP, NOperators, '.', PredLoop
 NOperator |= KW_LOOP, NOperators, KW_WHILE, NExpression, '.', PostLoop
@@ -348,9 +372,9 @@ NBaseExpression |= CHAR_LITERAL
 NBaseExpression |= INTEGER_CONST
 NBaseExpression |= "(", NExpression, ")"
 
-NFullType |= NType, '[][]'
-NFullType |= NType, '[]'
-NFullType |= NType
+NFullType |= NType, '[][]', lambda type_: FullType(type_, 2)
+NFullType |= NType, '[]', lambda type_: FullType(type_, 1)
+NFullType |= NType, lambda type_: FullType(type_, 0)
 
 NType |= KW_INT, lambda: Type.Integer
 NType |= KW_CHAR, lambda: Type.Char

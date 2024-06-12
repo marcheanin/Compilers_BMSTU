@@ -4,7 +4,6 @@ import dataclasses
 import re
 import sys
 
-
 __all__ = '''
 Terminal
 ExAction
@@ -97,9 +96,9 @@ class ErrorTerminal(BaseTerminal):
         return 1, ErrorTerminal
 
 
-@dataclasses.dataclass(frozen = True)
+@dataclasses.dataclass(frozen=True)
 class ExAction():
-    callee : object
+    callee: object
 
     @staticmethod
     def wrap_simple_action(simple_fold):
@@ -135,7 +134,6 @@ class NonTerminal(Symbol):
         rules = separator.join(strprod(prod) for prod in self.productions)
         return title + rules
 
-
     @staticmethod
     def __wrap_literals(symbol):
         if isinstance(symbol, str):
@@ -143,7 +141,6 @@ class NonTerminal(Symbol):
         else:
             assert isinstance(symbol, Symbol)
             return symbol
-
 
     def __ior__(self, other):
         is_callable = lambda obj: hasattr(obj, '__call__')
@@ -182,13 +179,13 @@ class NonTerminal(Symbol):
         return zip(self.productions, self.lambdas)
 
 
-@dataclasses.dataclass(frozen = True)
+@dataclasses.dataclass(frozen=True)
 class Position:
-    offset : int = 0
-    line : int = 1
-    col : int = 1
+    offset: int = 0
+    line: int = 1
+    col: int = 1
 
-    def shift(self, text : str):
+    def shift(self, text: str):
         offset, line, col = dataclasses.astuple(self)
 
         for char in text:
@@ -204,10 +201,10 @@ class Position:
         return f'({self.line}, {self.col})'
 
 
-@dataclasses.dataclass(frozen = True)
+@dataclasses.dataclass(frozen=True)
 class Fragment:
-    start : Position
-    following : Position
+    start: Position
+    following: Position
 
     def __str__(self):
         return f'{self.start}-{self.following}'
@@ -215,9 +212,9 @@ class Fragment:
 
 @dataclasses.dataclass
 class Token:
-    type : BaseTerminal
-    pos : Fragment
-    attr : object
+    type: BaseTerminal
+    pos: Fragment
+    attr: object
 
     def __str__(self):
         if self.attr is not None:
@@ -449,15 +446,15 @@ class Error(Exception, abc.ABC):
 
 @dataclasses.dataclass
 class ParseError(Error):
-    pos : Position
-    unexpected : Symbol
-    expected : list
+    pos: Position
+    unexpected: Symbol
+    expected: list
 
     @property
     def message(self):
         expected = ', '.join(map(str, self.expected))
         return f'Неожиданный символ {self.unexpected}, ' \
-                + f'ожидалось {expected}'
+            + f'ожидалось {expected}'
 
 
 class Parser(object):
@@ -476,7 +473,7 @@ class Parser(object):
             if isinstance(symbol, BaseTerminal):
                 self.terminals.add(symbol)
             else:
-                assert(isinstance(symbol, NonTerminal))
+                assert (isinstance(symbol, NonTerminal))
                 if symbol not in self.nonterms:
                     self.nonterms.append(symbol)
 
@@ -568,19 +565,19 @@ class Parser(object):
                 case Reduce(rule):
                     nt, prod, fold = self.productions[rule]
                     n = len(prod)
-                    attrs = [attr for state, coord, attr in stack[len(stack)-n:]
+                    attrs = [attr for state, coord, attr in stack[len(stack) - n:]
                              if attr != None]
-                    coords = [coord for state, coord, attr in stack[len(stack)-n:]]
+                    coords = [coord for state, coord, attr in stack[len(stack) - n:]]
                     if len(coords) > 0:
                         res_coord = Fragment(coords[0].start, coords[-1].following)
                     else:
                         res_coord = Fragment(cur.pos.start, cur.pos.start)
-                    del stack[len(stack)-n:]
+                    del stack[len(stack) - n:]
                     goto_state = self.table.goto[stack[-1][0]][nt]
                     res_attr = fold.callee(attrs, coords, res_coord)
                     stack.append((goto_state, res_coord, res_attr))
                 case Accept():
-                    assert(len(stack) == 2)
+                    assert (len(stack) == 2)
                     return top_attr
                 case None:
                     expected = [symbol for symbol, actions
@@ -715,7 +712,6 @@ class LR0_Automaton:
             set_queue = new_elements
         return frozenset(result)
 
-
     @staticmethod
     def __goto(gr, item_set, inp):
         result_set = set()
@@ -725,7 +721,6 @@ class LR0_Automaton:
                 result_set.add((prod_index, dot + 1))
         result_set = LR0_Automaton.__closure(gr, result_set)
         return result_set
-
 
     @staticmethod
     def __kernels(item_set):
@@ -766,7 +761,7 @@ class Lexer:
             matches = [(d, d.priority, *d.match(self.text, offset))
                        for d in self.domains]
             domain, priority, length, attr = \
-                    max(matches, key=lambda t: (t[2], t[1]))
+                max(matches, key=lambda t: (t[2], t[1]))
 
             assert length > 0
 
