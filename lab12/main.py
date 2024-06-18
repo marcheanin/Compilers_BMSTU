@@ -34,6 +34,16 @@ class RepeatedFunction(SemanticError):
         return f'Повторная функция {self.func_name} на {self.pos}'
 
 
+class RepeatedVariable(SemanticError):
+    def __init__(self, pos, varname):
+        self.pos = pos
+        self.varname = varname
+
+    @property
+    def message(self):
+        return f'Повторная переменная {self.varname}'
+
+
 class WrongFunctionType(SemanticError):
     def __init__(self, pos, functionName):
         self.pos = pos
@@ -51,6 +61,41 @@ class MainFunctionIncorrect(SemanticError):
     @property
     def message(self):
         return 'Функция Main некорректна: проверьте сигнатуру'
+
+
+class MainFunctionNotFound(SemanticError):
+    def __init__(self):
+        pass
+
+    @property
+    def message(self):
+        return f'Функция Main не найдена'
+
+
+class UnBadType(SemanticError):
+    def __init__(self, pos, op, type_):
+        self.pos = pos
+        self.op = op
+        self.type = type_
+
+    @property
+    def message(self):
+        return f'Несовместимый тип на {self.pos}: {self.op} {self.type}'
+
+
+class NotIntFor(SemanticError):
+    def __init__(self, pos, type_):
+        self.pos = pos
+        self.type = type_
+
+    @property
+    def message(self):
+        return f'Ожидался тип Int или Char, получен {self.type}'
+
+    @staticmethod
+    def check(type_, pos):
+        if type_ not in (Type.Integer, Type.Char):
+            raise NotIntFor(pos, type_)
 
 
 class Type(enum.Enum):
@@ -91,7 +136,26 @@ class DataExpression(Expression):
 @dataclass
 class UnOpExpr(Expression):
     op: str
+    op_coord: pe.Position
     expr: Expression
+
+    @staticmethod
+    def create(op):
+        @pe.ExAction
+        def action(attrs, coords, res_coords):
+            expr_, = attrs
+            op_coord, expr_coord = coords
+            return UnOpExpr(op, op_coord.start, expr_)
+
+        return action
+
+    def check(self, vars):
+        self.expr.check(vars)
+        if self.op == '-' and self.expr.type not in [Type.Char, Type.Integer]:
+            raise UnBadType(self.op_coord, self.op, self.expr.type)
+        if self.op == '!' and self.expr.type != Type.Bool:
+            raise UnBadType(self.op_coord, self.op, self.expr.type)
+        self.type = self.expr.type
 
 
 @dataclass
@@ -111,25 +175,21 @@ class AssignOperator(Operator):
     expr: Expression
 
 
-class Decl(abc.ABC):
-    pass
-
-
 @dataclass
-class Decl1(Decl):
+class Decl:
     ident: Ident
-
-
-@dataclass
-class Decl2(Decl):
-    ident: Ident
-    expr: Expression
+    expr: Expression | None
 
 
 @dataclass
 class DeclOperator(Operator):
     type: FullType
-    decl: list[Decl]
+    decls: list[Decl]
+
+    def check(self, vars):
+        for decl in self.decls:
+            if decl.ident in vars:
+                raise RepeatedVariable(decl.ident.coord, decl.ident)
 
 
 @dataclass
@@ -187,7 +247,9 @@ class FuncDecl:
 
     @pe.ExAction
     def create(attrs, coords, res_coord):
-
+        type_, ident_, params_, ops_ = attrs
+        type_coord, ident_coord, arrow_coord, params_coord, eq_coord, ops_coord = coords
+        return FuncDecl(type_, type_coord, ident_, ident_coord, params_, ops_, )
 
 
 @dataclass
@@ -227,18 +289,20 @@ class Program:
             if funcDecl.ident == '{Main}':
                 main_func = funcDecl
             if funcDecl.ident in func_names:
-                raise RepeatedFunction(funcDecl.ident.coord, funcDecl.ident)
+                raise RepeatedFunction(funcDecl.ident_coord, funcDecl.ident)
             func_names[funcDecl.ident] = funcDecl.type
 
         if main_func:  # проверка правильно ли задана main функция
             if main_func.type != Type.Integer:
-                raise MainFunctionIncorrect(main_func.pos)
+                raise MainFunctionIncorrect(main_func.type_coord)
             else:
                 if len(main_func.params) == 1:
                     if main_func.params[0].type != Type.Char or main_func.params[0].array_dim != 2:
-                        raise MainFunctionIncorrect(main_func.pos)
+                        raise MainFunctionIncorrect(main_func.type_coord)
                 else:
-                    raise MainFunctionIncorrect(main_func.pos)
+                    raise MainFunctionIncorrect(main_func.type_coord)
+        else:
+            raise MainFunctionNotFound()
 
         for funcDecl in self.funcDecls:
             funcDecl.check()
@@ -280,10 +344,12 @@ NProgram |= NProgram, NFuncDecl, lambda fncs, fn: Program(fncs + [fn])
 
 NFuncDecl |= NFullType, NIdent, '<-', NParameters, '=', NOperators, '.', FuncDecl
 NFuncDecl |= KW_VOID, NIdent, '<-', NParameters, '=', NOperators, '.', FuncDecl
-NFuncDecl |= NFullType, NIdent, '=', NOperators, '.', lambda type_, ident_, operators: FuncDecl(type_, ident_, None, operators)
-NFuncDecl |= KW_VOID, NIdent, '=', NOperators, '.', lambda type_, ident_, operators: FuncDecl(type_, ident_, None, operators)
+NFuncDecl |= NFullType, NIdent, '=', NOperators, '.', lambda type_, ident_, operators: FuncDecl(type_, ident_, None,
+                                                                                                operators)
+NFuncDecl |= KW_VOID, NIdent, '=', NOperators, '.', lambda type_, ident_, operators: FuncDecl(type_, ident_, None,
+                                                                                              operators)
 
-NParameters |= NParameter, lambda param: [param]  # аналогично
+NParameters |= NParameter, lambda param: [param]
 NParameters |= NParameters, ',', NParameter, lambda params, param: params + [param]
 
 NParameter |= NFullType, NIdent, Parameter
@@ -296,8 +362,8 @@ NOperator |= NFullType, NDecls, DeclOperator
 NDecls |= NDecl, lambda decl: [decl]
 NDecls |= NDecls, ',', NDecl, lambda decls, decl: decls + [decl]
 
-NDecl |= NIdent, Decl1
-NDecl |= NIdent, ':=', NArithmExpression, Decl2
+NDecl |= NIdent, lambda ident_: Decl(ident_, None)
+NDecl |= NIdent, ':=', NArithmExpression, Decl
 
 NOperator |= NDataExpression, ':=', NExpression, AssignOperator
 
