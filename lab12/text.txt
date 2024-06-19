@@ -15,4 +15,4 @@ int[] {SumVectors}
     else return 8 . ;
     return {C} .
 
-int {sum} = return 12 .
+int {Main} <- char[][] {A} = return 12 .

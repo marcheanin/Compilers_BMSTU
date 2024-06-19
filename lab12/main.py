@@ -168,7 +168,9 @@ class BinOpExpr(Expression):
 
 
 class Operator(abc.ABC):
-    pass
+    @abc.abstractmethod
+    def check(self, variables):
+        pass
 
 
 @dataclass
@@ -176,11 +178,29 @@ class AssignOperator(Operator):
     expr_left: DataExpression
     expr: Expression
 
+    def check(self, variables):
+        pass
+
 
 @dataclass
 class Decl:
     ident: Ident
+    ident_coord: pe.Position
     expr: Expression | None
+    expr_coord: pe.Position | None
+
+    @pe.ExAction
+    def create(attrs, coords, res_coord):
+        ident_, expr_ = attrs
+        ident_coord, assign_symb_coord, expr_coord = coords
+        return Decl(ident_, ident_coord.start, expr_, expr_coord)
+
+    @pe.ExAction
+    def create2(attrs, coords, res_coord):
+        ident_, expr_ = attrs
+        ident_coord = coords
+        return Decl(ident_, ident_coord.start, None, None)
+
 
 
 @dataclass
@@ -188,10 +208,10 @@ class DeclOperator(Operator):
     type: FullType
     decls: list[Decl]
 
-    def check(self, vars):
+    def check(self, variables):
         for decl in self.decls:
-            if decl.ident in vars:
-                raise RepeatedVariable(decl.ident.coord, decl.ident)
+            if decl.ident.varname in variables:
+                raise RepeatedVariable(decl.ident_coord, decl.ident)
 
 
 @dataclass
@@ -200,11 +220,17 @@ class ChooseOperator1(Operator):
     operators1: list[Operator]
     operators2: list[Operator]
 
+    def check(self, variables):
+        pass
+
 
 @dataclass
 class ChooseOperator2(Operator):
     expr: Expression
     operators1: list[Operator]
+
+    def check(self, variables):
+        pass
 
 
 @dataclass
@@ -212,11 +238,17 @@ class PredLoop(Operator):
     expr: Expression
     ops: list[Operator]
 
+    def check(self, variables):
+        pass
+
 
 @dataclass
 class PostLoop(Operator):
     ops: list[Operator]
     expr: Expression
+
+    def check(self, variables):
+        pass
 
 
 @dataclass
@@ -226,10 +258,16 @@ class ForLoop(Operator):
     ident: Any
     ops: list[Operator]
 
+    def check(self, variables):
+        pass
+
 
 @dataclass
 class EndFuncOperator(Operator):
     expr: Expression | None
+
+    def check(self, variables):
+        pass
 
 
 @dataclass
@@ -259,6 +297,14 @@ class FuncDecl:
         type_coord, ident_coord, eq_coord, ops_coord, dot_coord = coords
         return FuncDecl(type_, type_coord.start, ident_, ident_coord.start, None, ops_, )
 
+    def check(self):
+        variables = {}
+        for param in self.params:
+            variables[param.name.varname] = param.type
+
+        for operator in self.ops:
+            operator.check(variables)
+
 
 @dataclass
 class ArithmExpression(Expression):
@@ -285,6 +331,9 @@ class FuncCallExpression(Expression):
     ident: Ident
     expr: list[Expression]
 
+    def check(self, variables):
+        pass
+
 
 @dataclass
 class Program:
@@ -294,18 +343,18 @@ class Program:
         main_func = None
         func_names = {}
         for funcDecl in self.funcDecls:  # проверка на повторяющиеся объявления функций
-            if funcDecl.ident.varname == '{Main}':
+            if funcDecl.ident.varname == 'Main':
                 main_func = funcDecl
             if funcDecl.ident.varname in func_names:
                 raise RepeatedFunction(funcDecl.ident_coord, funcDecl.ident.varname)
-            func_names[funcDecl.ident.varname] = funcDecl.type
+            func_names[funcDecl.ident.varname] = funcDecl.type.type
 
         if main_func:  # проверка правильно ли задана main функция
-            if main_func.type != Type.Integer:
+            if main_func.type.type != Type.Integer:
                 raise MainFunctionIncorrect(main_func.type_coord)
             else:
                 if len(main_func.params) == 1:
-                    if main_func.params[0].type != Type.Char or main_func.params[0].array_dim != 2:
+                    if main_func.params[0].type.type != Type.Char or main_func.params[0].type.array_dim != 2:
                         raise MainFunctionIncorrect(main_func.type_coord)
                 else:
                     raise MainFunctionIncorrect(main_func.type_coord)
@@ -370,8 +419,8 @@ NOperator |= NFullType, NDecls, DeclOperator
 NDecls |= NDecl, lambda decl: [decl]
 NDecls |= NDecls, ',', NDecl, lambda decls, decl: decls + [decl]
 
-NDecl |= NIdent, lambda ident_: Decl(ident_, None)
-NDecl |= NIdent, ':=', NArithmExpression, Decl
+NDecl |= NIdent, Decl.create2
+NDecl |= NIdent, ':=', NArithmExpression, Decl.create
 
 NOperator |= NDataExpression, ':=', NExpression, AssignOperator
 
