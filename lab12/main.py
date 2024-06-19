@@ -64,8 +64,12 @@ class MainFunctionIncorrect(SemanticError):
 
 
 class MainFunctionNotFound(SemanticError):
-    def __init__(self):
-        pass
+    def __init__(self, pos):
+        self.pos = pos
+
+    @property
+    def message(self):
+        return f'Функция Main не найдена'
 
     @property
     def message(self):
@@ -122,9 +126,7 @@ class Ident:
 
 
 class Expression(abc.ABC):
-    @abc.abstractmethod
-    def check(self, vars):
-        pass
+    pass
 
 
 @dataclass
@@ -248,8 +250,14 @@ class FuncDecl:
     @pe.ExAction
     def create(attrs, coords, res_coord):
         type_, ident_, params_, ops_ = attrs
-        type_coord, ident_coord, arrow_coord, params_coord, eq_coord, ops_coord = coords
-        return FuncDecl(type_, type_coord, ident_, ident_coord, params_, ops_, )
+        type_coord, ident_coord, arrow_coord, params_coord, eq_coord, ops_coord, dot_coord = coords
+        return FuncDecl(type_, type_coord.start, ident_, ident_coord.start, params_, ops_, )
+
+    @pe.ExAction
+    def create2(attrs, coords, res_coord):
+        type_, ident_, ops_ = attrs
+        type_coord, ident_coord, eq_coord, ops_coord, dot_coord = coords
+        return FuncDecl(type_, type_coord.start, ident_, ident_coord.start, None, ops_, )
 
 
 @dataclass
@@ -286,11 +294,11 @@ class Program:
         main_func = None
         func_names = {}
         for funcDecl in self.funcDecls:  # проверка на повторяющиеся объявления функций
-            if funcDecl.ident == '{Main}':
+            if funcDecl.ident.varname == '{Main}':
                 main_func = funcDecl
-            if funcDecl.ident in func_names:
-                raise RepeatedFunction(funcDecl.ident_coord, funcDecl.ident)
-            func_names[funcDecl.ident] = funcDecl.type
+            if funcDecl.ident.varname in func_names:
+                raise RepeatedFunction(funcDecl.ident_coord, funcDecl.ident.varname)
+            func_names[funcDecl.ident.varname] = funcDecl.type
 
         if main_func:  # проверка правильно ли задана main функция
             if main_func.type != Type.Integer:
@@ -302,7 +310,7 @@ class Program:
                 else:
                     raise MainFunctionIncorrect(main_func.type_coord)
         else:
-            raise MainFunctionNotFound()
+            raise MainFunctionNotFound(pe.Position(0, 1, 1))
 
         for funcDecl in self.funcDecls:
             funcDecl.check()
@@ -328,26 +336,26 @@ KW_INT, KW_CHAR, KW_BOOL, KW_VOID, KW_TRUE, KW_FALSE, KW_NULL = \
 KW_IF, KW_THEN, KW_ELSE, KW_RETURN, KW_LOOP, KW_WHILE = \
     map(make_keyword, ['if', 'then', 'else', 'return', 'loop', 'while'])
 
-(NProgram, NFuncDecl, NParameters, NParameter, NOperators, NOperator,
+(NProgram, NFuncDecl, NFuncDecls, NParameters, NParameter, NOperators, NOperator,
  NDeclOperator, NFullType, NType, NExpression, NExpressions, NDataExpression, NArithmExpression, NArithmExpressions,
  NAndExpression, NCmpExpression, NFuncCallExpression, NCmpOp, NMulOp, NAddOp, NOrOp,
  NIdent, NDecls, NDecl, NTerm, NFactor, NPower, NBaseExpression) = \
     map(pe.NonTerminal,
-        'Program FuncDecl Parameters Parameter Operators Operator '
+        'Program FuncDecl FuncDecls Parameters Parameter Operators Operator '
         'DeclOperator FullType Type Expression Expressions '
         'DataExpression ArithmExpression ArithmExpressions AndExpression CmpExpression FuncCallExpression'
         ' CmpOp MulOp AddOp OrOp Ident '
         'Decls Decl Term Factor Power BaseExpression'.split())
 
-NProgram |= NFuncDecl, Program
-NProgram |= NProgram, NFuncDecl, lambda fncs, fn: Program(fncs + [fn])
+NProgram |= NFuncDecls, Program
 
-NFuncDecl |= NFullType, NIdent, '<-', NParameters, '=', NOperators, '.', FuncDecl
-NFuncDecl |= KW_VOID, NIdent, '<-', NParameters, '=', NOperators, '.', FuncDecl
-NFuncDecl |= NFullType, NIdent, '=', NOperators, '.', lambda type_, ident_, operators: FuncDecl(type_, ident_, None,
-                                                                                                operators)
-NFuncDecl |= KW_VOID, NIdent, '=', NOperators, '.', lambda type_, ident_, operators: FuncDecl(type_, ident_, None,
-                                                                                              operators)
+NFuncDecls |= NFuncDecl, lambda fnc: [fnc]
+NFuncDecls |= NFuncDecls, NFuncDecl, lambda fncs, fn: fncs + [fn]
+
+NFuncDecl |= NFullType, NIdent, '<-', NParameters, '=', NOperators, '.', FuncDecl.create
+NFuncDecl |= KW_VOID, NIdent, '<-', NParameters, '=', NOperators, '.', FuncDecl.create
+NFuncDecl |= NFullType, NIdent, '=', NOperators, '.', FuncDecl.create2
+NFuncDecl |= KW_VOID, NIdent, '=', NOperators, '.', FuncDecl.create2
 
 NParameters |= NParameter, lambda param: [param]
 NParameters |= NParameters, ',', NParameter, lambda params, param: params + [param]
@@ -463,5 +471,8 @@ for filename in ["text.txt"]:
         with open(filename) as f:
             tree = parser.parse(f.read())
             pprint(tree)
+            tree.check()
+
+            print('Семантических ошибок не найдено')
     except pe.Error as e:
         print(f'Ошибка {e.pos}: {e.message}')

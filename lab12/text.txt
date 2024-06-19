@@ -14,3 +14,5 @@ int[] {SumVectors}
     {A}5 < 7 then return 7
     else return 8 . ;
     return {C} .
+
+int {sum} = return 12 .
