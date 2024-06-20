@@ -1,12 +1,13 @@
 int[] {SumVectors}
     <- int[] {A}, int[] {B}
-    = int {size} := {Length} + {A};
-    int[] {C} := {size};
+    = int {size} := 10;
+    int[] {C} := {A};
+    int {E} := 15;
     char[] {D} := "Hello world";
     {FuncName} <- {A}, {B}, 5 / (10 * 3);
-    int {res_func} := (65 + 7) * {A} ;
+    int {res_func} := (65 + 7) * {E} ;
     0 ~ {size} loop {i}
-        {C}{i} := {A}{i} + {B} . ;
+        {C}{i} := {A}{i} + {B}{i} . ;
     ## КОММЕНТАРИЙ ##
     #(
         многострочный комментарий
@@ -15,4 +16,4 @@ int[] {SumVectors}
     else return 8 . ;
     return {C} .
 
-int {Main} <- char[][] {A} = return 12 .
+int {Main} <- char[][] {A} = return 0 .

@@ -55,7 +55,7 @@ class WrongFunctionType(SemanticError):
 
 
 class WrongReturnType(SemanticError):
-    def __init__(self, pos, type_expected, actual_type):
+    def __init__(self, pos, actual_type, type_expected):
         self.pos = pos
         self.type_exp = type_expected
         self.actual_type = actual_type
@@ -130,6 +130,16 @@ class NotBoolCondition(SemanticError):
         return f'Условие имеет тип {self.type} вместо логического'
 
 
+class UnknownVar(SemanticError):
+    def __init__(self, pos, varname):
+        self.pos = pos
+        self.varname = varname
+
+    @property
+    def message(self):
+        return f'Неизвестная переменная {self.varname}'
+
+
 class NotIntFor(SemanticError):
     def __init__(self, pos, type_):
         self.pos = pos
@@ -153,19 +163,34 @@ class Type(enum.Enum):
 
 
 @dataclass
-class CharSequenceType:
-    value: str
-
-
-@dataclass
 class FullType:
     type: Type
     array_dim: int
 
 
 @dataclass
+class CharSequenceType:
+    value: str
+    type: FullType
+
+
+@dataclass
 class Ident:
     varname: str
+    varname_coord: pe.Position
+    type: None
+
+    @pe.ExAction
+    def create(attrs, coords, res_coords):
+        _varname, = attrs
+        left_br_coord, _varname_coord, right_br_coord = coords
+        return Ident(_varname, _varname_coord.start, None)
+
+    def check(self, variables):
+        try:
+            self.type = variables[self.varname]
+        except KeyError:
+            return UnknownVar(self.varname_coord, self.varname)
 
 
 class Expression(abc.ABC):
@@ -198,9 +223,9 @@ class UnOpExpr(Expression):
 
     def check(self, vars):
         self.expr.check(vars)
-        if self.op == '-' and self.expr.type not in [Type.Char, Type.Integer]:
+        if self.op == '-' and self.expr.type not in [FullType(Type.Char, 0), FullType(Type.Integer, 0)]:
             raise UnBadType(self.op_coord, self.op, self.expr.type)
-        if self.op == '!' and self.expr.type != Type.Bool:
+        if self.op == '!' and self.expr.type != FullType(Type.Bool, 0):
             raise UnBadType(self.op_coord, self.op, self.expr.type)
         self.type = self.expr.type
 
@@ -217,6 +242,92 @@ class BinOpExpr(Expression):
         left_, op_, right_ = attrs
         left_coord, op_coord, right_coord = coords
         return BinOpExpr(left_, op_, op_coord.start, right_)
+
+    @pe.ExAction
+    def create_at(attrs, coords, res_coords):
+        left_, right_ = attrs
+        left_coord, right_coord = coords
+        return BinOpExpr(left_, 'at', left_coord.following, right_)
+
+    @pe.ExAction
+    def create_alloc(attrs, coords, res_coords):
+        left_, right_ = attrs
+        left_coord, right_coord = coords
+        return BinOpExpr(left_, 'alloc', left_coord.following, right_)
+
+    def check(self, variables):
+        self.left.check(variables)
+        self.right.check(variables)
+        self.type = None
+        if self.op in ('<', '>', '<=', '>='):
+            if self.left.type.array_dim == 0 and self.right.type.array_dim == 0:
+                if self.left.type == FullType(Type.Integer, 0) == self.right.type == FullType(Type.Integer, 0) or \
+                        self.left.type == FullType(Type.Integer, 0) == self.right.type == FullType(Type.Char, 0) or \
+                        self.left.type == FullType(Type.Char, 0) == self.right.type == FullType(Type.Integer, 0) or \
+                        self.left.type == FullType(Type.Char, 0) == self.right.type == FullType(Type.Char, 0):
+                    self.type = FullType(Type.Bool, 0)
+                else:
+                    raise BinBadType(self.op_coord, self.left.type, self.op, self.right.type)
+            else:
+                raise BinBadType(self.op_coord, self.left.type, self.op, self.right.type)
+        elif self.op in ('==', '!='):
+            if self.left.type.array_dim == 0 and self.right.type.array_dim == 0:
+                if self.left.type == FullType(Type.Integer, 0) == self.right.type == FullType(Type.Integer, 0) or \
+                        self.left.type == FullType(Type.Integer, 0) == self.right.type == FullType(Type.Char, 0) or \
+                        self.left.type == FullType(Type.Char, 0) == self.right.type == FullType(Type.Integer, 0) or \
+                        self.left.type == FullType(Type.Char, 0) == self.right.type == FullType(Type.Char, 0) or \
+                        self.left.type == FullType(Type.Bool, 0) == self.right.type == FullType(Type.Bool, 0):
+                    self.type = FullType(Type.Bool, 0)
+                else:
+                    raise BinBadType(self.op_coord, self.left.type, self.op, self.right.type)
+            elif self.left.type.array_dim != self.right.type.array_dim:
+                raise BinBadType(self.op_coord, self.left.type, self.op, self.right.type)
+        elif self.op in ('&', '|', '@'):
+            if self.left.type == FullType(Type.Bool, 0) == self.right.type == FullType(Type.Bool, 0):
+                self.type = FullType(Type.Bool, 0)
+            else:
+                raise BinBadType(self.op_coord, self.left.type, self.op, self.right.type)
+        elif self.op in ('^', '*', '/', '%'):
+            if self.left.type == FullType(Type.Integer, 0) == self.right.type == FullType(Type.Integer, 0):
+                self.type = FullType(Type.Integer, 0)
+            else:
+                raise BinBadType(self.op_coord, self.left.type, self.op, self.right.type)
+        elif self.op == '+':
+            if self.left.type.array_dim == 0 and self.right.type.array_dim == 0:
+                if self.left.type.type == Type.Integer and self.right.type.type == Type.Integer:
+                    self.type = FullType(Type.Integer, 0)
+                elif self.left.type.type == Type.Integer and self.right.type.type == Type.Char:
+                    self.type = FullType(Type.Char, 0)
+                elif self.left.type.type == Type.Char and self.right.type.type == Type.Integer:
+                    self.type = FullType(Type.Char, 0)
+                else:
+                    raise BinBadType(self.op_coord, self.left.type, self.op, self.right.type)
+            else:
+                raise BinBadType(self.op_coord, self.left.type, self.op, self.right.type)
+        elif self.op == '-':
+            if self.left.type.array_level == 0 and self.right.type.array_level == 0:
+                if self.left.type.type == Type.Integer and self.right.type.type == Type.Integer:
+                    self.type = FullType(Type.Integer, 0)
+                elif self.left.type.type == Type.Char and self.right.type.type == Type.Char:
+                    self.type = FullType(Type.Integer, 0)
+                elif self.left.type.type == Type.Char and self.right.type.type == Type.Integer:
+                    self.type = FullType(Type.Char, 0)
+                else:
+                    raise BinBadType(self.op_coord, self.left.type, self.op, self.right.type)
+            else:
+                raise BinBadType(self.op_coord, self.left.type, self.op, self.right.type)
+        elif self.op == 'at':
+            if self.left.type.array_dim > 0 and self.right.type.array_dim == 0:
+                if self.right.type.type == Type.Integer or self.right.type.type == Type.Char:
+                    self.type = FullType(self.left.type.type, 0)
+                else:
+                    raise BinBadType(self.op_coord, self.left.type, self.op, self.right.type)
+            else:
+                raise BinBadType(self.op_coord, self.left.type, self.op, self.right.type)
+
+        if self.type is None:
+            raise BinBadType(self.op_coord, self.left.type,
+                             self.op, self.right.type)
 
 
 class Operator(abc.ABC):
@@ -277,6 +388,15 @@ class DeclOperator(Operator):
         for decl in self.decls:
             if decl.ident.varname in variables:
                 raise RepeatedVariable(decl.ident_coord, decl.ident)
+            else:
+                if decl.expr is not None:
+                    decl.expr.check(variables)
+                    if self.type == decl.expr.type:
+                        variables[decl.ident.varname] = decl.expr.type
+                    else:
+                        raise BinBadType(decl.expr_coord, self.type, decl.expr.type)
+                else:
+                    variables[decl.ident.varname] = None
 
 
 def check_operators(ops: list[Operator], variables):
@@ -348,7 +468,6 @@ class PostLoop(Operator):
             raise NotBoolCondition(self.expr_coord, self.expr.type)
 
 
-
 @dataclass
 class ForLoop(Operator):
     exprFrom: Expression
@@ -365,10 +484,13 @@ class ForLoop(Operator):
         return ForLoop(expr_from_, expr_from_coord.start, expr_to_, expr_to_coord.start, ident_, ops_)
 
     def check(self, variables):
+        self.exprFrom.check(variables)
+        self.exprTo.check(variables)
         if self.exprFrom.type not in (FullType(Type.Integer, 0), FullType(Type.Char, 0)):
             raise WrongForType(self.exprFromCoord, self.exprFrom.type)
         if self.exprTo.type not in (FullType(Type.Integer, 0), FullType(Type.Char, 0)):
             raise WrongForType(self.exprToCoord, self.exprTo.type)
+        variables[self.ident.varname] = FullType(Type.Integer, 0)
         check_operators(self.ops, variables)
 
 
@@ -392,12 +514,14 @@ class EndFuncOperator(Operator):
         if func_type is None:
             return
         else:
+            self.expr.check(variables)
             if func_type == FullType(Type.Void, 0) and self.expr is not None:
-                raise WrongReturnType(self.return_coord, Type.Void, func_type)
+                raise WrongReturnType(self.return_coord, self.expr.type, Type.Void)
             if func_type != self.expr.type:
                 raise WrongReturnType(self.return_coord, self.expr.type, func_type)
             else:
                 return
+
 
 @dataclass
 class Parameter:
@@ -432,6 +556,8 @@ class FuncDecl:
             variables[param.name.varname] = param.type
 
         for operator in self.ops:
+            if isinstance(operator, EndFuncOperator):
+                operator.check(variables, self.type)
             operator.check(variables)
 
 
@@ -461,6 +587,15 @@ class FuncCallExpression(Expression):
     expr: list[Expression]
 
     def check(self, variables):
+        pass
+
+
+@dataclass
+class ConstExpr(Expression):
+    value: Any
+    type: FullType
+
+    def check(self, vars):
         pass
 
 
@@ -610,18 +745,18 @@ NFactor |= NPower, "^", NFactor, BinOpExpr.create
 NPower |= NDataExpression
 NPower |= "!", NPower, UnOpExpr.create("!")
 NPower |= "-", NPower, UnOpExpr.create("-")
-NPower |= NFullType, NBaseExpression, BinOpExpr.create
+NPower |= NFullType, NBaseExpression, BinOpExpr.create_alloc
 
 NDataExpression |= NBaseExpression
-NDataExpression |= NDataExpression, NBaseExpression, lambda x, y: BinOpExpr(x, 'at', y)
-NDataExpression |= STRING_CONST, CharSequenceType
+NDataExpression |= NDataExpression, NBaseExpression, BinOpExpr.create_at
+NDataExpression |= STRING_CONST, lambda expr: ConstExpr(expr, FullType(Type.Char, 1))
 
-NBaseExpression |= NIdent, Ident
-NBaseExpression |= KW_TRUE
-NBaseExpression |= KW_FALSE
-NBaseExpression |= KW_NULL
-NBaseExpression |= CHAR_LITERAL
-NBaseExpression |= INTEGER_CONST
+NBaseExpression |= NIdent
+NBaseExpression |= KW_TRUE, lambda expr: ConstExpr(expr, FullType(Type.Bool, 0))
+NBaseExpression |= KW_FALSE, lambda expr: ConstExpr(expr, FullType(Type.Bool, 0))
+NBaseExpression |= KW_NULL, lambda expr: ConstExpr(expr, FullType(Type.Integer, 1))
+NBaseExpression |= CHAR_LITERAL, lambda expr: ConstExpr(expr, FullType(Type.Char, 0))
+NBaseExpression |= INTEGER_CONST, lambda expr: ConstExpr(expr, FullType(Type.Integer, 0))
 NBaseExpression |= "(", NExpression, ")"
 
 NFullType |= NType, '[][]', lambda type_: FullType(type_, 2)
@@ -632,7 +767,7 @@ NType |= KW_INT, lambda: Type.Integer
 NType |= KW_CHAR, lambda: Type.Char
 NType |= KW_BOOL, lambda: Type.Bool
 
-NIdent |= "{", VARNAME, "}", Ident
+NIdent |= "{", VARNAME, "}", Ident.create
 
 parser = pe.Parser(NProgram)
 
