@@ -54,6 +54,27 @@ class WrongFunctionType(SemanticError):
         return f'Функция {self.functionName} имеет неверный тип, позиция: {self.pos}'
 
 
+class WrongReturnType(SemanticError):
+    def __init__(self, pos, type_expected, actual_type):
+        self.pos = pos
+        self.type_exp = type_expected
+        self.actual_type = actual_type
+
+    @property
+    def message(self):
+        return f'Неверный тип возвращаемого значения: {self.actual_type}, ожидался {self.type_exp}'
+
+
+class WrongForType(SemanticError):
+    def __init__(self, pos, type_):
+        self.pos = pos
+        self.type = type_
+
+    @property
+    def message(self):
+        return f'Ожидался целый тип, получен {self.type}'
+
+
 class MainFunctionIncorrect(SemanticError):
     def __init__(self, pos):
         self.pos = pos
@@ -85,6 +106,28 @@ class UnBadType(SemanticError):
     @property
     def message(self):
         return f'Несовместимый тип на {self.pos}: {self.op} {self.type}'
+
+
+class BinBadType(SemanticError):
+    def __init__(self, pos, left, op, right):
+        self.pos = pos
+        self.left = left
+        self.op = op
+        self.right = right
+
+    @property
+    def message(self):
+        return f'Несовместимые типы: {self.left} {self.op} {self.right}'
+
+
+class NotBoolCondition(SemanticError):
+    def __init__(self, pos, type_):
+        self.pos = pos
+        self.type = type_
+
+    @property
+    def message(self):
+        return f'Условие имеет тип {self.type} вместо логического'
 
 
 class NotIntFor(SemanticError):
@@ -126,7 +169,9 @@ class Ident:
 
 
 class Expression(abc.ABC):
-    pass
+    @abc.abstractmethod
+    def check(self, variables):
+        pass
 
 
 @dataclass
@@ -142,12 +187,12 @@ class UnOpExpr(Expression):
     expr: Expression
 
     @staticmethod
-    def create(op):
+    def create(operation):
         @pe.ExAction
         def action(attrs, coords, res_coords):
             expr_, = attrs
             op_coord, expr_coord = coords
-            return UnOpExpr(op, op_coord.start, expr_)
+            return UnOpExpr(operation, op_coord.start, expr_)
 
         return action
 
@@ -164,7 +209,14 @@ class UnOpExpr(Expression):
 class BinOpExpr(Expression):
     left: Expression
     op: str
+    op_coord: pe.Position
     right: Expression
+
+    @pe.ExAction
+    def create(attrs, coords, res_coords):
+        left_, op_, right_ = attrs
+        left_coord, op_coord, right_coord = coords
+        return BinOpExpr(left_, op_, op_coord.start, right_)
 
 
 class Operator(abc.ABC):
@@ -176,10 +228,24 @@ class Operator(abc.ABC):
 @dataclass
 class AssignOperator(Operator):
     expr_left: DataExpression
-    expr: Expression
+    left_coord: pe.Position
+    expr_right: Expression
+
+    @pe.ExAction
+    def create(attrs, coords, res_coords):
+        expr_left_, expr_right_ = attrs
+        left_coord, assign_symb_coord, expr_right_coord = coords
+        return AssignOperator(expr_left_, assign_symb_coord.start, expr_right_)
 
     def check(self, variables):
-        pass
+        self.expr_left.check(variables)
+        self.expr_right.check(variables)
+
+        if self.expr_left.type == FullType(Type.Integer, 0) and self.expr_right.type in (
+                FullType(Type.Integer, 0), FullType(Type.Char, 0)):
+            return
+        if self.expr_left.type != self.expr_right.type:
+            raise BinBadType(self.left_coord, self.expr_left.type, ':=', self.expr_right.type)
 
 
 @dataclass
@@ -202,7 +268,6 @@ class Decl:
         return Decl(ident_, ident_coord.start, None, None)
 
 
-
 @dataclass
 class DeclOperator(Operator):
     type: FullType
@@ -214,61 +279,125 @@ class DeclOperator(Operator):
                 raise RepeatedVariable(decl.ident_coord, decl.ident)
 
 
-@dataclass
-class ChooseOperator1(Operator):
-    expr: Expression
-    operators1: list[Operator]
-    operators2: list[Operator]
-
-    def check(self, variables):
-        pass
+def check_operators(ops: list[Operator], variables):
+    for operator in ops:
+        operator.check(variables)
 
 
 @dataclass
-class ChooseOperator2(Operator):
+class ChooseOperator(Operator):
     expr: Expression
+    expr_coord: pe.Position
     operators1: list[Operator]
+    operators2: list[Operator] | None
+
+    @pe.ExAction
+    def create(attrs, coords, res_coord):
+        expr_, operators1_, operators2_ = attrs
+        expr_coord, kw_then_coord, operators1_coord, kw_else_coord, operators2_coord, dot_coord = coords
+        return ChooseOperator(expr_, expr_coord.start, operators1_, operators2_)
+
+    @pe.ExAction
+    def create2(attrs, coords, res_coord):
+        expr_, operators1_, operators2_ = attrs
+        expr_coord, kw_then_coord, operators1_coord, dot_coord = coords
+        return ChooseOperator(expr_, expr_coord.start, operators1_, None)
 
     def check(self, variables):
-        pass
+        self.expr.check(variables)
+        if self.expr.type != FullType(Type.Bool, 0):
+            raise NotBoolCondition(self.expr_coord, self.expr.type)
+        check_operators(self.operators1, variables)
+        check_operators(self.operators2, variables)
 
 
 @dataclass
 class PredLoop(Operator):
     expr: Expression
+    expr_coord: pe.Position
     ops: list[Operator]
 
+    @pe.ExAction
+    def create(attrs, coords, res_coord):
+        expr_, ops_ = attrs
+        expr_coord, kw_loop_coord, ops_coord, dot_coord = coords
+        return PredLoop(expr_, expr_coord.start, ops_)
+
     def check(self, variables):
-        pass
+        self.expr.check(variables)
+        if self.expr.type != FullType(Type.Bool, 0):
+            raise NotBoolCondition(self.expr_coord, self.expr.type)
+        check_operators(self.ops, variables)
 
 
 @dataclass
 class PostLoop(Operator):
     ops: list[Operator]
+    expr_coord: pe.Position
     expr: Expression
 
+    @pe.ExAction
+    def create(attrs, coords, res_coord):
+        ops_, expr_ = attrs
+        kw_loop_coord, ops_coord, kw_while_coord, expr_coord, dot_coord = coords
+        return PostLoop(ops_, expr_coord.start, expr_)
+
     def check(self, variables):
-        pass
+        self.expr.check(vars)
+        if self.expr.type != FullType(Type.Bool, 0):
+            raise NotBoolCondition(self.expr_coord, self.expr.type)
+
 
 
 @dataclass
 class ForLoop(Operator):
     exprFrom: Expression
+    exprFromCoord: pe.Position
     exprTo: Expression
-    ident: Any
+    exprToCoord: pe.Position
+    ident: Ident
     ops: list[Operator]
 
+    @pe.ExAction
+    def create(attrs, coords, res_coord):
+        expr_from_, expr_to_, ident_, ops_ = attrs
+        expr_from_coord, tild_coord, expr_to_coord, kw_loop_coord, ident_coord, ops_coord, dot_coord = coords
+        return ForLoop(expr_from_, expr_from_coord.start, expr_to_, expr_to_coord.start, ident_, ops_)
+
     def check(self, variables):
-        pass
+        if self.exprFrom.type not in (FullType(Type.Integer, 0), FullType(Type.Char, 0)):
+            raise WrongForType(self.exprFromCoord, self.exprFrom.type)
+        if self.exprTo.type not in (FullType(Type.Integer, 0), FullType(Type.Char, 0)):
+            raise WrongForType(self.exprToCoord, self.exprTo.type)
+        check_operators(self.ops, variables)
 
 
 @dataclass
 class EndFuncOperator(Operator):
+    return_coord: pe.Position
     expr: Expression | None
 
-    def check(self, variables):
-        pass
+    @pe.ExAction
+    def create(attrs, coords, res_coord):
+        expr_, = attrs
+        return_coord, expr_coord = coords
+        return EndFuncOperator(return_coord.start, expr_)
 
+    @pe.ExAction
+    def create2(attrs, coords, res_coord):
+        return_coord = coords
+        return EndFuncOperator(return_coord.start, None)
+
+    def check(self, variables, func_type=None):
+        if func_type is None:
+            return
+        else:
+            if func_type == FullType(Type.Void, 0) and self.expr is not None:
+                raise WrongReturnType(self.return_coord, Type.Void, func_type)
+            if func_type != self.expr.type:
+                raise WrongReturnType(self.return_coord, self.expr.type, func_type)
+            else:
+                return
 
 @dataclass
 class Parameter:
@@ -422,22 +551,22 @@ NDecls |= NDecls, ',', NDecl, lambda decls, decl: decls + [decl]
 NDecl |= NIdent, Decl.create2
 NDecl |= NIdent, ':=', NArithmExpression, Decl.create
 
-NOperator |= NDataExpression, ':=', NExpression, AssignOperator
+NOperator |= NDataExpression, ':=', NExpression, AssignOperator.create
 
-NOperator |= NExpression, KW_THEN, NOperators, KW_ELSE, NOperators, '.', ChooseOperator1
-NOperator |= NExpression, KW_THEN, NOperators, '.', ChooseOperator2
+NOperator |= NExpression, KW_THEN, NOperators, KW_ELSE, NOperators, '.', ChooseOperator.create
+NOperator |= NExpression, KW_THEN, NOperators, '.', ChooseOperator.create2
 
 NOperator |= NIdent, "<-", NArithmExpressions, FuncCallExpression
 
-NOperator |= KW_RETURN, NExpression, EndFuncOperator
-NOperator |= KW_RETURN, lambda: EndFuncOperator(None)
+NOperator |= KW_RETURN, NExpression, EndFuncOperator.create
+NOperator |= KW_RETURN, EndFuncOperator.create2
 
-NOperator |= NExpression, KW_LOOP, NOperators, '.', PredLoop
-NOperator |= KW_LOOP, NOperators, KW_WHILE, NExpression, '.', PostLoop
-NOperator |= NExpression, '~', NExpression, KW_LOOP, NIdent, NOperators, '.', ForLoop
+NOperator |= NExpression, KW_LOOP, NOperators, '.', PredLoop.create
+NOperator |= KW_LOOP, NOperators, KW_WHILE, NExpression, '.', PostLoop.create
+NOperator |= NExpression, '~', NExpression, KW_LOOP, NIdent, NOperators, '.', ForLoop.create
 
 NExpression |= NAndExpression
-NExpression |= NAndExpression, NOrOp, NAndExpression, BinOpExpr
+NExpression |= NAndExpression, NOrOp, NAndExpression, BinOpExpr.create
 
 
 def make_op_lambda(op):
@@ -458,10 +587,10 @@ NAddOp |= "+", lambda: "+"
 NAddOp |= "-", lambda: "-"
 
 NAndExpression |= NCmpExpression
-NAndExpression |= NCmpExpression, "&", NCmpExpression, BinOpExpr
+NAndExpression |= NCmpExpression, "&", NCmpExpression, BinOpExpr.create
 
 NCmpExpression |= NFuncCallExpression
-NCmpExpression |= NFuncCallExpression, NCmpOp, NFuncCallExpression, BinOpExpr
+NCmpExpression |= NFuncCallExpression, NCmpOp, NFuncCallExpression, BinOpExpr.create
 
 NFuncCallExpression |= NArithmExpression
 NFuncCallExpression |= NIdent, "<-", NArithmExpressions, FuncCallExpression
@@ -470,18 +599,18 @@ NArithmExpressions |= NArithmExpression, lambda expr: [expr]
 NArithmExpressions |= NArithmExpressions, ",", NArithmExpression, lambda exprs, expr: exprs + [expr]
 
 NArithmExpression |= NTerm
-NArithmExpression |= NArithmExpression, NAddOp, NTerm, BinOpExpr
+NArithmExpression |= NArithmExpression, NAddOp, NTerm, BinOpExpr.create
 
 NTerm |= NFactor
-NTerm |= NTerm, NMulOp, NFactor, BinOpExpr
+NTerm |= NTerm, NMulOp, NFactor, BinOpExpr.create
 
 NFactor |= NPower
-NFactor |= NPower, "^", NFactor, BinOpExpr
+NFactor |= NPower, "^", NFactor, BinOpExpr.create
 
 NPower |= NDataExpression
-NPower |= "!", NPower, lambda p: UnOpExpr("!", p)
-NPower |= "-", NPower, lambda p: UnOpExpr("-", p)
-NPower |= NFullType, NBaseExpression, lambda x, y: BinOpExpr(x, 'allocate', y)
+NPower |= "!", NPower, UnOpExpr.create("!")
+NPower |= "-", NPower, UnOpExpr.create("-")
+NPower |= NFullType, NBaseExpression, BinOpExpr.create
 
 NDataExpression |= NBaseExpression
 NDataExpression |= NDataExpression, NBaseExpression, lambda x, y: BinOpExpr(x, 'at', y)
@@ -507,7 +636,7 @@ NIdent |= "{", VARNAME, "}", Ident
 
 parser = pe.Parser(NProgram)
 
-parser.print_table()
+# parser.print_table()
 assert parser.is_lalr_one()
 
 # пробельные символы
