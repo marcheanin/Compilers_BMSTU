@@ -1,3 +1,124 @@
+% Лабораторная работа № 3.3 «Семантический анализ»
+% 21 июня 2024 г.
+% Андрей Марченко, ИУ9-62Б
+
+# Цель работы
+Целью данной работы является получение навыков выполнения семантического анализа.
+
+# Индивидуальный вариант
+Язык L2.
+
+Семантический анализ:
+- Вызываемые функции должны быть определены в программе.
+- Переменные в выражениях должны быть определены ранее.
+- Область видимости переменной начинается с оператора-объявления и заканчивается 
+вместе с последовательностью операторов, где она определена.
+- Операции применяются к операндам допустимых типов (таблица 3).
+- Операнды оператора присваивания должны быть совместимых типов.
+- Типы формальных параметров должны совпадать с типами фактических параметров.
+
+## Лексическая структура и конкретный синтаксис
+Лексическая структура:
+```
+OrOp -> "|" | "@" .
+CmpOp -> ">" | "<" | "<=" | ">=" | "==" | "!=" .
+AddOp -> "+" | "-" .
+MulOp -> "*" | "//" | "%" .
+
+VARNAME -> [A-Za-z0-9_]+
+STRING_CONST -> (\"([^\"]|%(\"[%\\]|[0-9A-Fa-f]{2}|BEL|BS|TAB|LF|VT|FF|CR))*\")
+CHAR_LITERAL -> \$\"[^\"]\"|\$[0-9A-Fa-f]{2}|\$\"%(BEL|LF|CR|BS|VT|FF|\"\")%\"
+INTEGER-CONST -> [0-9]+
+COMMENT -> ##.*?##|#\([\s\S]*?\)#
+```
+
+Конкретная грамматика:
+```
+Program -> FuncDecl
+            | Program FuncDecl .
+
+FuncDecl -> FullTypeOrVoid Ident "<-" Parameters "=" Operators "."
+            | FullTypeOrVoid Ident "=" Operators "." .
+
+FullTypeOrVoid -> FullType
+                  | KW_VOID .
+
+Parameters -> Parameter | Parameters "," Parameter .
+Parameter -> FullType Ident .
+
+Operators -> Operator | Operators ";" Operator .
+Operator -> DeclOperator
+            | AssignOperator
+            | FuncCallOperator
+            | ChooseOperator
+            | PredLoopOperator
+            | PostLoopOperator
+            | ForLoopOperator
+            | EndFuncOperator .
+
+DeclOperator -> FullType Decls .
+Decls -> Decl
+        | Decls "," Decl .
+Decl -> Ident
+        | Ident ":=" ArithmExpression .
+
+AssignOperator -> DataExpression ":=" Expression .
+
+ChooseOperator -> Expression "then" Operators "else" Operators "."
+                  | Expression "then" Operators "." .
+
+PredLoopOperator -> Expression "loop" Operators "." .
+ForLoopOperator -> Expression "~" Expression "loop" Ident Operators "." .
+PostLoopOperator -> "loop" Operators "while" Expression "." .
+
+EndFuncOperator -> "return" Expression
+                    | "return" .
+
+Expression -> OrExpression .
+OrExpression -> AndExpression |
+                AndExpression OrOp AndExpression .
+
+AndExpression -> CmpExpression |
+                 CmpExpression "&" CmpExpression .
+
+CmpExpression -> FuncCallExpression |
+                 FuncCallExpression CmpOp FuncCallExpression .
+
+FuncCallExpression -> ArithmExpression |
+                        Ident "<-" NArithmExpressions .
+
+ArithmExpressions -> ArithmExpression |
+                      ArithmExpressions "," ArithmExpression .
+
+ArithmExpression -> Term |
+                    ArithmExpression AddOp Term .
+
+Term -> Factor |
+        Term MulOp Factor .
+
+Factor -> Power |
+          Power "^" Factor .
+
+Power -> "!" Power |
+          "-" Power |
+          TYPE BaseExpression |
+          DataExpression .
+
+DataExpression -> BaseExpression |
+                  DataExpression BaseExpression .
+
+BaseExpression -> STRING_CONST | CHAR_CONST | INTEGER_CONST | Ident | "(" Expression ")" .
+
+
+Ident -> "{" VARNAME "}" .
+FullType -> TYPE
+            | TYPE "[]"
+            | TYPE "[][]" .
+```
+
+# Реализация
+
+```python
 import abc
 import enum
 from abc import ABC
@@ -261,10 +382,14 @@ class BinOpExpr(Expression):
         self.type = None
         if self.op in ('<', '>', '<=', '>='):
             if self.left.type.array_dim == 0 and self.right.type.array_dim == 0:
-                if self.left.type == FullType(Type.Integer, 0) == self.right.type == FullType(Type.Integer, 0) or \
-                        self.left.type == FullType(Type.Integer, 0) == self.right.type == FullType(Type.Char, 0) or \
-                        self.left.type == FullType(Type.Char, 0) == self.right.type == FullType(Type.Integer, 0) or \
-                        self.left.type == FullType(Type.Char, 0) == self.right.type == FullType(Type.Char, 0):
+                if self.left.type == FullType(Type.Integer, 0) 
+                    == self.right.type == FullType(Type.Integer, 0) or \
+                        self.left.type == FullType(Type.Integer, 0) 
+                    == self.right.type == FullType(Type.Char, 0) or \
+                        self.left.type == FullType(Type.Char, 0) 
+                    == self.right.type == FullType(Type.Integer, 0) or \
+                        self.left.type == FullType(Type.Char, 0) 
+                    == self.right.type == FullType(Type.Char, 0):
                     self.type = FullType(Type.Bool, 0)
                 else:
                     raise BinBadType(self.op_coord, self.left.type, self.op, self.right.type)
@@ -272,11 +397,16 @@ class BinOpExpr(Expression):
                 raise BinBadType(self.op_coord, self.left.type, self.op, self.right.type)
         elif self.op in ('==', '!='):
             if self.left.type.array_dim == 0 and self.right.type.array_dim == 0:
-                if self.left.type == FullType(Type.Integer, 0) == self.right.type == FullType(Type.Integer, 0) or \
-                        self.left.type == FullType(Type.Integer, 0) == self.right.type == FullType(Type.Char, 0) or \
-                        self.left.type == FullType(Type.Char, 0) == self.right.type == FullType(Type.Integer, 0) or \
-                        self.left.type == FullType(Type.Char, 0) == self.right.type == FullType(Type.Char, 0) or \
-                        self.left.type == FullType(Type.Bool, 0) == self.right.type == FullType(Type.Bool, 0):
+                if self.left.type == FullType(Type.Integer, 0) == 
+                    self.right.type == FullType(Type.Integer, 0) or \
+                        self.left.type == FullType(Type.Integer, 0) 
+                    == self.right.type == FullType(Type.Char, 0) or \
+                        self.left.type == FullType(Type.Char, 0) 
+                    == self.right.type == FullType(Type.Integer, 0) or \
+                        self.left.type == FullType(Type.Char, 0) 
+                    == self.right.type == FullType(Type.Char, 0) or \
+                        self.left.type == FullType(Type.Bool, 0) 
+                    == self.right.type == FullType(Type.Bool, 0):
                     self.type = FullType(Type.Bool, 0)
                 else:
                     raise BinBadType(self.op_coord, self.left.type, self.op, self.right.type)
@@ -480,7 +610,8 @@ class ForLoop(Operator):
     @pe.ExAction
     def create(attrs, coords, res_coord):
         expr_from_, expr_to_, ident_, ops_ = attrs
-        expr_from_coord, tild_coord, expr_to_coord, kw_loop_coord, ident_coord, ops_coord, dot_coord = coords
+        expr_from_coord, tild_coord, expr_to_coord, \
+        kw_loop_coord, ident_coord, ops_coord, dot_coord = coords
         return ForLoop(expr_from_, expr_from_coord.start, expr_to_, expr_to_coord.start, ident_, ops_)
 
     def check(self, variables):
@@ -618,7 +749,8 @@ class Program:
                 raise MainFunctionIncorrect(main_func.type_coord)
             else:
                 if len(main_func.params) == 1:
-                    if main_func.params[0].type.type != Type.Char or main_func.params[0].type.array_dim != 2:
+                    if main_func.params[0].type.type != Type.Char 
+                        or main_func.params[0].type.array_dim != 2:
                         raise MainFunctionIncorrect(main_func.type_coord)
                 else:
                     raise MainFunctionIncorrect(main_func.type_coord)
@@ -632,7 +764,8 @@ class Program:
 # лексическая структура
 
 INTEGER_CONST = pe.Terminal('INTEGER', '[0-9]+', int, priority=7)
-CHAR_LITERAL = pe.Terminal('CHAR_LITERAL', '\$\"[^\"]\"|\$[0-9A-Fa-f]{2}|\$\"%(BEL|LF|CR|BS|VT|FF|\"\")%\"', str)
+CHAR_LITERAL = pe.Terminal('CHAR_LITERAL', 
+                           '\$\"[^\"]\"|\$[0-9A-Fa-f]{2}|\$\"%(BEL|LF|CR|BS|VT|FF|\"\")%\"', str)
 STRING_CONST = pe.Terminal('STRING',
                            '(\"([^\"]|%(\"[%\\]|[0-9A-Fa-f]{2}|BEL|BS|TAB|LF|VT|FF|CR))*\")',
                            str)
@@ -650,7 +783,8 @@ KW_IF, KW_THEN, KW_ELSE, KW_RETURN, KW_LOOP, KW_WHILE = \
     map(make_keyword, ['if', 'then', 'else', 'return', 'loop', 'while'])
 
 (NProgram, NFuncDecl, NFuncDecls, NParameters, NParameter, NOperators, NOperator,
- NDeclOperator, NFullType, NType, NExpression, NExpressions, NDataExpression, NArithmExpression, NArithmExpressions,
+ NDeclOperator, NFullType, NType, NExpression, NExpressions, NDataExpression, 
+ NArithmExpression, NArithmExpressions,
  NAndExpression, NCmpExpression, NFuncCallExpression, NCmpOp, NMulOp, NAddOp, NOrOp,
  NIdent, NDecls, NDecl, NTerm, NFactor, NPower, NBaseExpression) = \
     map(pe.NonTerminal,
@@ -789,3 +923,47 @@ for filename in ["text.txt"]:
             print('Семантических ошибок не найдено')
     except pe.Error as e:
         print(f'Ошибка {e.pos}: {e.message}')
+
+```
+
+# Тестирование
+
+Приведем пример одной из семантических ошибок:
+## Входные данные
+
+```
+int[] {SumVectors}
+    <- int[] {A}, int[] {B}
+    = int {size} := 10;
+    int[] {C} := {A};
+    int {E} := 15;
+    char[] {D} := "Hello world";
+    {FuncName} <- {A}, {B}, 5 / (10 * 3);
+    int {res_func} := (65 + 7) * {E} ;
+    0 ~ {size} loop {i}
+        {C}{i} := {A}{i} + {B}{i} . ;
+    ## КОММЕНТАРИЙ ##
+    #(
+        многострочный комментарий
+    )#
+    {A}5 < 7 then {C}0 := 2
+    else {C}0 := 5 . ;
+    return 14 .
+
+int {Main} <- char[][] {A} = return 0 .
+```
+
+## Вывод на `stdout`
+
+```
+Ошибка (17, 5): Неверный тип возвращаемого значения: FullType(type=<Type.Integer: 'int'>, array_dim=0), 
+ожидался FullType(type=<Type.Integer: 'int'>, array_dim=1)
+```
+
+# Вывод
+Это лабораторная работа оказалась одной из самых интересных для меня. Навыки написания семантических правил 
+являются не менее важными, чем предыдущие этапы разбора программы. При этом освоив функционал этой 
+библиотеки, дело остается за логикой и красотой написания и проектирования кода (при наличии качественно
+выполненной лабы 2.2, конечно). Я считаю, что мне повезло с языком, в плане его "обычности", и теперь
+я могу примерно представлять как можно реализовать семантический анализ в популярных языках,
+таких как с++, java, python

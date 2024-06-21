@@ -14,6 +14,6 @@ int[] {SumVectors}
     )#
     {A}5 < 7 then {C}0 := 2
     else {C}0 := 5 . ;
-    return {C} .
+    return 14 .
 
 int {Main} <- char[][] {A} = return 0 .
