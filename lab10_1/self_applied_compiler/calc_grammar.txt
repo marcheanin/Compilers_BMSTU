@@ -1,0 +1,9 @@
+# грамматика для калькулятора
+
+'axiom S -> T E2 'end
+E2 -> S1 T E2 'or 'epsilon 'end
+T -> F T2 'end
+T2 -> S2 F T2 'or 'epsilon 'end
+F -> "NUM" 'or "(" S ")" 'end
+S1 -> "+" 'or "-" 'end
+S2 -> "*" 'or "/" 'end

@@ -9,157 +9,157 @@ digraph {
 3 -> 8
 5 [label = "LEFT"]
 5 -> 9
-9 [label = "LEFT 2"]
+9 [label = "LEFT 1"]
 9 -> 10
-10 [label = "NONTERM"]
+9 -> 11
+10 [label = "KEY_WORD_AXIOM"]
+11 [label = "NONTERM"]
 6 [label = "ARROW"]
 7 [label = "RIGHT"]
-7 -> 11
 7 -> 12
-11 [label = "PART_RIGHT"]
-11 -> 13
-11 -> 14
-13 [label = "SYMB"]
-13 -> 15
-15 [label = "\"n\""]
-14 [label = "PART_RIGHT2"]
+7 -> 13
+12 [label = "PART_RIGHT"]
+12 -> 14
+12 -> 15
+14 [label = "SYMB"]
 14 -> 16
-16 [label = "epsilon"]
-12 [label = "ALTERNATIVE"]
-12 -> 17
-12 -> 18
-12 -> 19
-17 [label = "KEY_WORD_OR"]
-18 [label = "PART_RIGHT"]
+16 [label = "NONTERM"]
+15 [label = "PART_RIGHT2"]
+15 -> 17
+15 -> 18
+17 [label = "SYMB"]
+17 -> 19
+19 [label = "NONTERM"]
+18 [label = "PART_RIGHT2"]
 18 -> 20
-18 -> 21
-20 [label = "SYMB"]
-20 -> 22
-22 [label = "\"(\""]
-21 [label = "PART_RIGHT2"]
-21 -> 23
-21 -> 24
-23 [label = "SYMB"]
+20 [label = "epsilon"]
+13 [label = "ALTERNATIVE"]
+13 -> 21
+13 -> 22
+13 -> 23
+21 [label = "KEY_WORD_OR"]
+22 [label = "PART_RIGHT"]
+22 -> 24
+24 [label = "KEY_WORD_EPS"]
+23 [label = "ALTERNATIVE"]
 23 -> 25
-25 [label = "NONTERM"]
-24 [label = "PART_RIGHT2"]
-24 -> 26
-24 -> 27
-26 [label = "SYMB"]
-26 -> 28
-28 [label = "\")\""]
-27 [label = "PART_RIGHT2"]
-27 -> 29
-29 [label = "epsilon"]
-19 [label = "ALTERNATIVE"]
-19 -> 30
-30 [label = "epsilon"]
+25 [label = "epsilon"]
 8 [label = "KEY_WORD_END"]
 4 [label = "PROGRAM"]
-4 -> 31
-4 -> 32
-31 [label = "RULE"]
-31 -> 33
-31 -> 34
-31 -> 35
-31 -> 36
-33 [label = "LEFT"]
-33 -> 37
-37 [label = "LEFT 2"]
-37 -> 38
+4 -> 26
+4 -> 27
+26 [label = "RULE"]
+26 -> 28
+26 -> 29
+26 -> 30
+26 -> 31
+28 [label = "LEFT"]
+28 -> 32
+32 [label = "LEFT 2"]
+32 -> 33
+33 [label = "NONTERM"]
+29 [label = "ARROW"]
+30 [label = "RIGHT"]
+30 -> 34
+30 -> 35
+34 [label = "PART_RIGHT"]
+34 -> 36
+34 -> 37
+36 [label = "SYMB"]
+36 -> 38
 38 [label = "NONTERM"]
-34 [label = "ARROW"]
-35 [label = "RIGHT"]
-35 -> 39
-35 -> 40
-39 [label = "PART_RIGHT"]
+37 [label = "PART_RIGHT2"]
+37 -> 39
+37 -> 40
+39 [label = "SYMB"]
 39 -> 41
-39 -> 42
-41 [label = "SYMB"]
-41 -> 43
-43 [label = "NONTERM"]
-42 [label = "PART_RIGHT2"]
+41 [label = "\"->\""]
+40 [label = "PART_RIGHT2"]
+40 -> 42
+40 -> 43
+42 [label = "SYMB"]
 42 -> 44
-42 -> 45
-44 [label = "SYMB"]
-44 -> 46
-46 [label = "NONTERM"]
-45 [label = "PART_RIGHT2"]
+44 [label = "NONTERM"]
+43 [label = "PART_RIGHT2"]
+43 -> 45
+43 -> 46
+45 [label = "SYMB"]
 45 -> 47
-47 [label = "epsilon"]
-40 [label = "ALTERNATIVE"]
-40 -> 48
+47 [label = "\"'end\""]
+46 [label = "PART_RIGHT2"]
+46 -> 48
 48 [label = "epsilon"]
-36 [label = "KEY_WORD_END"]
-32 [label = "PROGRAM"]
-32 -> 49
-32 -> 50
-49 [label = "RULE"]
-49 -> 51
-49 -> 52
-49 -> 53
-49 -> 54
-51 [label = "LEFT"]
-51 -> 55
-55 [label = "LEFT 2"]
-55 -> 56
-56 [label = "NONTERM"]
-52 [label = "ARROW"]
-53 [label = "RIGHT"]
-53 -> 57
-53 -> 58
-57 [label = "PART_RIGHT"]
-57 -> 59
-57 -> 60
-59 [label = "SYMB"]
-59 -> 61
-61 [label = "\"*\""]
-60 [label = "PART_RIGHT2"]
+35 [label = "ALTERNATIVE"]
+35 -> 49
+49 [label = "epsilon"]
+31 [label = "KEY_WORD_END"]
+27 [label = "PROGRAM"]
+27 -> 50
+27 -> 51
+50 [label = "RULE"]
+50 -> 52
+50 -> 53
+50 -> 54
+50 -> 55
+52 [label = "LEFT"]
+52 -> 56
+56 [label = "LEFT 2"]
+56 -> 57
+57 [label = "NONTERM"]
+53 [label = "ARROW"]
+54 [label = "RIGHT"]
+54 -> 58
+54 -> 59
+58 [label = "PART_RIGHT"]
+58 -> 60
+58 -> 61
+60 [label = "SYMB"]
 60 -> 62
-60 -> 63
-62 [label = "SYMB"]
-62 -> 64
-64 [label = "NONTERM"]
-63 [label = "PART_RIGHT2"]
+62 [label = "\"'axiom\""]
+61 [label = "PART_RIGHT2"]
+61 -> 63
+61 -> 64
+63 [label = "SYMB"]
 63 -> 65
-63 -> 66
-65 [label = "SYMB"]
-65 -> 67
-67 [label = "NONTERM"]
-66 [label = "PART_RIGHT2"]
-66 -> 68
-68 [label = "epsilon"]
-58 [label = "ALTERNATIVE"]
-58 -> 69
-58 -> 70
-58 -> 71
-69 [label = "KEY_WORD_OR"]
-70 [label = "PART_RIGHT"]
+65 [label = "NONTERM"]
+64 [label = "PART_RIGHT2"]
+64 -> 66
+66 [label = "epsilon"]
+59 [label = "ALTERNATIVE"]
+59 -> 67
+59 -> 68
+59 -> 69
+67 [label = "KEY_WORD_OR"]
+68 [label = "PART_RIGHT"]
+68 -> 70
+68 -> 71
+70 [label = "SYMB"]
 70 -> 72
-72 [label = "KEY_WORD_EPS"]
-71 [label = "ALTERNATIVE"]
+72 [label = "NONTERM"]
+71 [label = "PART_RIGHT2"]
 71 -> 73
 73 [label = "epsilon"]
-54 [label = "KEY_WORD_END"]
-50 [label = "PROGRAM"]
-50 -> 74
-50 -> 75
-74 [label = "RULE"]
-74 -> 76
-74 -> 77
-74 -> 78
-74 -> 79
-76 [label = "LEFT"]
-76 -> 80
-80 [label = "LEFT 1"]
-80 -> 81
-80 -> 82
-81 [label = "KEY_WORD_AXIOM"]
+69 [label = "ALTERNATIVE"]
+69 -> 74
+74 [label = "epsilon"]
+55 [label = "KEY_WORD_END"]
+51 [label = "PROGRAM"]
+51 -> 75
+51 -> 76
+75 [label = "RULE"]
+75 -> 77
+75 -> 78
+75 -> 79
+75 -> 80
+77 [label = "LEFT"]
+77 -> 81
+81 [label = "LEFT 2"]
+81 -> 82
 82 [label = "NONTERM"]
-77 [label = "ARROW"]
-78 [label = "RIGHT"]
-78 -> 83
-78 -> 84
+78 [label = "ARROW"]
+79 [label = "RIGHT"]
+79 -> 83
+79 -> 84
 83 [label = "PART_RIGHT"]
 83 -> 85
 83 -> 86
@@ -178,10 +178,10 @@ digraph {
 84 [label = "ALTERNATIVE"]
 84 -> 92
 92 [label = "epsilon"]
-79 [label = "KEY_WORD_END"]
-75 [label = "PROGRAM"]
-75 -> 93
-75 -> 94
+80 [label = "KEY_WORD_END"]
+76 [label = "PROGRAM"]
+76 -> 93
+76 -> 94
 93 [label = "RULE"]
 93 -> 95
 93 -> 96
@@ -201,7 +201,7 @@ digraph {
 101 -> 104
 103 [label = "SYMB"]
 103 -> 105
-105 [label = "\"+\""]
+105 [label = "\"'or\""]
 104 [label = "PART_RIGHT2"]
 104 -> 106
 104 -> 107
@@ -231,5 +231,143 @@ digraph {
 98 [label = "KEY_WORD_END"]
 94 [label = "PROGRAM"]
 94 -> 118
-118 [label = "epsilon"]
+94 -> 119
+118 [label = "RULE"]
+118 -> 120
+118 -> 121
+118 -> 122
+118 -> 123
+120 [label = "LEFT"]
+120 -> 124
+124 [label = "LEFT 2"]
+124 -> 125
+125 [label = "NONTERM"]
+121 [label = "ARROW"]
+122 [label = "RIGHT"]
+122 -> 126
+122 -> 127
+126 [label = "PART_RIGHT"]
+126 -> 128
+126 -> 129
+128 [label = "SYMB"]
+128 -> 130
+130 [label = "NONTERM"]
+129 [label = "PART_RIGHT2"]
+129 -> 131
+129 -> 132
+131 [label = "SYMB"]
+131 -> 133
+133 [label = "NONTERM"]
+132 [label = "PART_RIGHT2"]
+132 -> 134
+134 [label = "epsilon"]
+127 [label = "ALTERNATIVE"]
+127 -> 135
+127 -> 136
+127 -> 137
+135 [label = "KEY_WORD_OR"]
+136 [label = "PART_RIGHT"]
+136 -> 138
+136 -> 139
+138 [label = "SYMB"]
+138 -> 140
+140 [label = "\"'epsilon\""]
+139 [label = "PART_RIGHT2"]
+139 -> 141
+141 [label = "epsilon"]
+137 [label = "ALTERNATIVE"]
+137 -> 142
+142 [label = "epsilon"]
+123 [label = "KEY_WORD_END"]
+119 [label = "PROGRAM"]
+119 -> 143
+119 -> 144
+143 [label = "RULE"]
+143 -> 145
+143 -> 146
+143 -> 147
+143 -> 148
+145 [label = "LEFT"]
+145 -> 149
+149 [label = "LEFT 2"]
+149 -> 150
+150 [label = "NONTERM"]
+146 [label = "ARROW"]
+147 [label = "RIGHT"]
+147 -> 151
+147 -> 152
+151 [label = "PART_RIGHT"]
+151 -> 153
+151 -> 154
+153 [label = "SYMB"]
+153 -> 155
+155 [label = "NONTERM"]
+154 [label = "PART_RIGHT2"]
+154 -> 156
+154 -> 157
+156 [label = "SYMB"]
+156 -> 158
+158 [label = "NONTERM"]
+157 [label = "PART_RIGHT2"]
+157 -> 159
+159 [label = "epsilon"]
+152 [label = "ALTERNATIVE"]
+152 -> 160
+152 -> 161
+152 -> 162
+160 [label = "KEY_WORD_OR"]
+161 [label = "PART_RIGHT"]
+161 -> 163
+163 [label = "KEY_WORD_EPS"]
+162 [label = "ALTERNATIVE"]
+162 -> 164
+164 [label = "epsilon"]
+148 [label = "KEY_WORD_END"]
+144 [label = "PROGRAM"]
+144 -> 165
+144 -> 166
+165 [label = "RULE"]
+165 -> 167
+165 -> 168
+165 -> 169
+165 -> 170
+167 [label = "LEFT"]
+167 -> 171
+171 [label = "LEFT 2"]
+171 -> 172
+172 [label = "NONTERM"]
+168 [label = "ARROW"]
+169 [label = "RIGHT"]
+169 -> 173
+169 -> 174
+173 [label = "PART_RIGHT"]
+173 -> 175
+173 -> 176
+175 [label = "SYMB"]
+175 -> 177
+177 [label = "NONTERM"]
+176 [label = "PART_RIGHT2"]
+176 -> 178
+178 [label = "epsilon"]
+174 [label = "ALTERNATIVE"]
+174 -> 179
+174 -> 180
+174 -> 181
+179 [label = "KEY_WORD_OR"]
+180 [label = "PART_RIGHT"]
+180 -> 182
+180 -> 183
+182 [label = "SYMB"]
+182 -> 184
+184 [label = "NONTERM"]
+183 [label = "PART_RIGHT2"]
+183 -> 185
+185 [label = "epsilon"]
+181 [label = "ALTERNATIVE"]
+181 -> 186
+186 [label = "epsilon"]
+170 [label = "KEY_WORD_END"]
+166 [label = "PROGRAM"]
+166 -> 187
+187 [label = "epsilon"]
 }

@@ -12,8 +12,8 @@ int[] {SumVectors}
     #(
         многострочный комментарий
     )#
-    {A}5 < 7 then return 7
-    else return 8 . ;
+    {A}5 < 7 then {C}0 := 2
+    else {C}0 := 5 . ;
     return {C} .
 
 int {Main} <- char[][] {A} = return 0 .

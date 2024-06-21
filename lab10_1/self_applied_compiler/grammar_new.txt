@@ -1,0 +1,9 @@
+'axiom S -> K S 'or 'epsilon 'end
+K -> L "ARROW" R  "END" 'end
+
+L -> "AXIOM" "NTERM" 'or "NTERM" 'end
+
+R -> F A T 'end
+A -> "EPS" A 'or "NTERM" A 'or "STR"  A 'or 'epsilon 'end
+T -> "OR" F A T 'or 'epsilon 'end
+F -> "EPS" 'or "NTERM" 'or "STR" 'end

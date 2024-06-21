@@ -49,7 +49,7 @@ class Lexer:
             ('KEY_WORD_END', r'\'end'),
             ('ARROW', r'->'),
             ('STR_TERM', r'\"[^\"\s]+\"'),
-            ('NONTERM', r'[A-Z][A-Z0-9]*'),
+            ('NONTERM', r'[A-Z][A-Z0-9_]*'),
             ('COMMENT', r'#.*$')
         ]
 

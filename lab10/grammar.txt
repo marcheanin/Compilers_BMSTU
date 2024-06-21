@@ -1,0 +1,23 @@
+GRAMMAR -> RULE GRAMMAR | .
+RULE -> LEFT ARROW RIGHT KW_END .
+
+LEFT -> KW_AXIOM NONTERM
+         | NONTERM .
+
+RIGHT -> PART_RIGHT ALTERNATIVE .
+ALTERNATIVE -> KW_OR PART_RIGHT ALTERNATIVE
+                | .
+PART_RIGHT -> SYMB PART_RIGHT2
+                | KW_EPS .
+PART_RIGHT2 -> SYMB PART_RIGHT2
+                | .
+SYMB -> STR_TERM
+            | NONTERM .
+
+KEY_WORD_EPS -> 'epsilon
+KEY_WORD_AXIOM -> 'axiom
+KEY_WORD_OR -> 'or
+KEY_WORD_END -> 'end
+STR_TERM -> "[^"\s]"
+NONTERM -> [A-Z][A-Z0-9]*
+ARROW -> '->'
